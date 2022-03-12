@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 
 const CERT_CONTENT = process.env.CERT_CONTENT;
 const CERT_LOCATION = process.env.CERT;
-
+console.log(CERT_CONTENT);
 fs.writeFileSync(CERT_LOCATION, CERT_CONTENT);
 
 app.listen(port, '0.0.0.0', () => {
