@@ -1,2 +1,3 @@
-# programming-langugages-api
-A demo REST API with Node.js Express.js and MySQL for most popular programming languages
+# How to setup
+
+heroku config:add CERT_CONTENT="$(cat /path/to/the/certificat)"
