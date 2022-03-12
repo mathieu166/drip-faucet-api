@@ -1,0 +1,1 @@
+pm2 start --name drip-faucet-api ./index.js

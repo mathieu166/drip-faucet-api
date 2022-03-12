@@ -1,0 +1,32 @@
+{
+  "name": "drip-faucet-api",
+  "version": "1.0.0",
+  "description": "API for faucet data",
+  "main": "index.js",
+  "type": "module",
+  "engines": {
+    "node": "16.x"
+  },
+  "scripts": {
+    "build": "npm install",
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mathieu166/drip-call-api"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "ethereum-input-data-decoder": "^0.3.5",
+    "ethers": "^5.5.2",
+    "express": "^4.17.1",
+    "express-rate-limit": "^5.5.1",
+    "mongodb": "^4.1.1"
+  }
+}
