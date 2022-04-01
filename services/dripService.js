@@ -49,7 +49,7 @@ export async function getDripFaucetDailyNewAccounts() {
 export async function getDripFaucetDailyMethod() {
   var client
   try {
-    const SEC_TO_GO_BACK_TO = 60 * 60 * 24 * 90;
+    const SEC_TO_GO_BACK_TO = 60 * 60 * 24 * 180;
     client = await dbService.client()
     await client.connect()
     var dbo = client.db(process.env.DB_NAME)
@@ -62,7 +62,272 @@ export async function getDripFaucetDailyMethod() {
 
     return []
   } catch (e) {
-    console.error('getDripFaucetDailyNewAccounts error: ' + e.message)
+    console.error('getDripFaucetDailyMethod error: ' + e.message)
+    throw e
+  } finally {
+
+    if(client){
+      client.close()
+    } 
+  }
+}
+
+export async function getDripAccountDailyRewards(accountAddress) {
+
+  const pipeline = [
+    { 
+        "$match" : { 
+            "$or" : [
+                { 
+                    "addr" : accountAddress.toLowerCase()
+                }, 
+                { 
+                    "from" : accountAddress.toLowerCase()
+                }, 
+                { 
+                    "to" : accountAddress.toLowerCase()
+                }
+            ]
+        }
+    },
+    { 
+      "$limit" : 1000
+    },
+    // { 
+    //     "$sort" : { 
+    //         "block" : 1.0, 
+    //         "transactionHash" : 1.0, 
+    //         "logIndex" : 1.0
+    //     }
+    // }, 
+    { 
+        "$group" : { 
+            "_id" : { 
+                "block": "$block",
+                "transactionHash" : "$transactionHash"
+            }, 
+            "method" : { 
+                "$max" : "$method"
+            }, 
+            "amount" : { 
+                "$max" : "$amount"
+            }, 
+            "block" : { 
+                "$max" : "$block"
+            }, 
+            "blockTimestamp" : { 
+                "$max" : "$blockTimestamp"
+            }, 
+            "events" : { 
+                "$push" : "$$ROOT"
+            }
+        }
+    }, 
+    // {
+    //   "$project": {
+    //     "transactionHash": 1
+    //   }
+    // },
+    // { 
+    //     "$sort" : { 
+    //         "blockTimestamp" : -1.0
+    //     }
+    // }
+]
+
+  var client
+  try {
+    client = await dbService.client()
+    await client.connect()
+    var dbo = client.db(process.env.DB_NAME)
+
+    const start = new Date().getTime()
+    const values = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+    {
+      "allowDiskUse": true
+    }).toArray()
+    console.log('took', new Date().getTime() - start, values.length)
+    // console.log(values)
+    return values
+
+  } catch (e) {
+    console.error('getDripAccountHistory error: ' + e.message)
+    throw e
+  } finally {
+
+    if(client){
+      client.close()
+    } 
+  }
+}
+
+export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByDesc) {
+
+  var client
+  try {
+    client = await dbService.client()
+    await client.connect()
+    var dbo = client.db(process.env.DB_NAME)
+
+    const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX)
+
+    var start = new Date().getTime()
+    var count = await collection.countDocuments(query)
+    console.log('Count took ', new Date().getTime() - start, 'ms')
+
+    var pipeline = []
+
+    var sort = {}
+    sort[sortBy] = parseInt(sortByDesc) * -1
+
+    pipeline.push({ $match: query })
+
+    pipeline.push({ $sort: sort })
+    pipeline.push({ $skip: skip })
+    pipeline.push({ $limit: limit })
+
+    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+    {
+      "allowDiskUse": true
+    }).toArray()
+
+    // console.log(results)
+
+    return { total: count, results }
+  } catch (e) {
+    console.error('getDripAccountHistory error: ' + e.message)
+    throw e
+  } finally {
+
+    if(client){
+      client.close()
+    } 
+  }
+}
+
+export async function getDripAccountAirdrops(query, limit, skip, sortBy, sortByDesc) {
+
+  var client
+  try {
+    client = await dbService.client()
+    await client.connect()
+    var dbo = client.db(process.env.DB_NAME)
+
+    const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX)
+
+    var count = await collection.find(query).count()
+
+    var pipeline = []
+
+    var sort = {}
+    sort[sortBy] = parseInt(sortByDesc) * -1
+
+    pipeline.push({ $match: query })
+
+    pipeline.push({ $sort: sort })
+    pipeline.push({ $skip: skip })
+    pipeline.push({ $limit: limit })
+
+    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+    {
+      "allowDiskUse": true
+    }).toArray()
+
+    // console.log(results)
+
+    return { total: count, results }
+  } catch (e) {
+    console.error('getDripAccountHistory error: ' + e.message)
+    throw e
+  } finally {
+
+    if(client){
+      client.close()
+    } 
+  }
+}
+
+
+const countDocuments = async function(addr, timestamp, collection){
+
+  var pipeline = [
+      {
+        "$match": {
+          "addr": addr,
+          "$or": [
+              {
+                  "event": "MatchPayout"
+              },
+              {
+                  "event": "DirectPayout"
+              }
+          ],
+          "blockTimestamp": {
+              "$lt": timestamp
+          }
+      }
+      }, 
+      {
+          "$group": {
+              "_id": {},
+              "COUNT(addr)": {
+                  "$sum": 1
+              }
+          }
+      }, 
+      {
+          "$project": {
+              "count": "$COUNT(addr)",
+              "_id": 0
+          }
+      }
+  ];
+
+  const results = await collection.aggregate(pipeline,
+    {
+      "allowDiskUse": true
+    }).toArray()
+  
+  return results[0].count
+}
+
+const count_cache = new Map()
+export async function getDripFaucetEvents(key, timestamp, query, limit, skip, sortBy, sortByDesc, maxResults) {
+
+  var client
+  try {
+    client = await dbService.client()
+    await client.connect()
+    var dbo = client.db(process.env.DB_NAME)
+
+    const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS)
+
+    var start = new Date().getTime()
+
+    console.log('Count took ', new Date().getTime() - start, 'ms')
+
+    var pipeline = []
+
+    var sort = {}
+    sort[sortBy] = parseInt(sortByDesc) * -1
+
+    pipeline.push({ $match: query })
+    pipeline.push({ $sort: sort })
+
+    pipeline.push({ $limit: 1001 })
+
+    start = new Date().getTime()
+    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+    {
+      "allowDiskUse": true
+    }).toArray()
+
+    const hasMore = results.length > 1000
+
+    console.log('Search took ', new Date().getTime() - start, 'ms')
+    return { total: hasMore? 1000: results.length, results: results.slice(skip, skip + limit), hasMore}
+  } catch (e) {
+    console.error('getDripAccountHistory error: ' + e.message)
     throw e
   } finally {
 

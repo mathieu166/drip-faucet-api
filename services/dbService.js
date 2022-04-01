@@ -1,5 +1,6 @@
 import Mongo from 'mongodb'
 export const DRIP_FAUCET_EVENTS = 'DripFaucetEvents'
+export const DRIP_FAUCET_EVENTS_BY_TX = 'DripFaucetEventsByTx'
 export const DRIP_FAUCET_MONTHLY_NEW_ACCOUNTS = 'DripFaucetMonthlyNewAccounts'
 export const DRIP_FAUCET_DAILY_NEW_ACCOUNTS = 'DripFaucetDailyNewAccounts'
 export const DRIP_FAUCET_DAILY_METHOD = 'DripFaucetDailyMethod'
