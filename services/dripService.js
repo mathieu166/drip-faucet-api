@@ -46,6 +46,33 @@ export async function getDripFaucetDailyNewAccounts() {
   }
 }
 
+
+export async function getDripFaucetDailyMethod() {
+  var client
+  try {
+    const SEC_TO_GO_BACK_TO = 60 * 60 * 24 * 180;
+    client = await dbService.client()
+    await client.connect()
+    var dbo = client.db(process.env.DB_NAME)
+
+    const lastEntry = await dbo.collection(dbService.DRIP_FAUCET_DAILY_METHOD).findOne({}, { sort: { start_timestamp: -1 }, limit: 1 })
+
+    if(lastEntry){
+      return await dbo.collection(dbService.DRIP_FAUCET_DAILY_METHOD).find({start_timestamp: {$gte: lastEntry.start_timestamp - SEC_TO_GO_BACK_TO}}).sort({start_timestamp: 1}).toArray()
+    }
+
+    return []
+  } catch (e) {
+    console.error('getDripFaucetDailyMethod error: ' + e.message)
+    throw e
+  } finally {
+
+    if(client){
+      client.close()
+    } 
+  }
+}
+
 export async function getDripFaucetPlayerDeposit() {
   var client
   try {
