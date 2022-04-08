@@ -4,6 +4,7 @@ export const DRIP_FAUCET_EVENTS_BY_TX = 'DripFaucetEventsByTx'
 export const DRIP_FAUCET_MONTHLY_NEW_ACCOUNTS = 'DripFaucetMonthlyNewAccounts'
 export const DRIP_FAUCET_DAILY_NEW_ACCOUNTS = 'DripFaucetDailyNewAccounts'
 export const DRIP_FAUCET_DAILY_METHOD = 'DripFaucetDailyMethod'
+export const DRIP_FAUCET_PLAYER_DEPOSIT = 'DripFaucetPlayerDeposit'
 
 
 export async function client() {

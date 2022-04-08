@@ -32,6 +32,16 @@ router.get('/faucetDailyMethod', async function (req, res, next) {
   }
 });
 
+router.get('/faucetPlayerDeposit', async function (req, res, next) {
+  try {
+    const response = await dripService.getDripFaucetPlayerDeposit()
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /faucetDailyMethod`, err.message);
+    next(err);
+  }
+});
+
 router.get('/faucetAccountHistory', async function (req, res, next) {
   try {
     var address = req.query.address
