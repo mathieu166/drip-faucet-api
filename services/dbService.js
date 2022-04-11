@@ -5,6 +5,7 @@ export const DRIP_FAUCET_MONTHLY_NEW_ACCOUNTS = 'DripFaucetMonthlyNewAccounts'
 export const DRIP_FAUCET_DAILY_NEW_ACCOUNTS = 'DripFaucetDailyNewAccounts'
 export const DRIP_FAUCET_DAILY_METHOD = 'DripFaucetDailyMethod'
 export const DRIP_FAUCET_PLAYER_DEPOSIT = 'DripFaucetPlayerDeposit'
+export const DRIP_FAUCET_DONATORS = 'DripFaucetDonators'
 
 
 export async function client() {

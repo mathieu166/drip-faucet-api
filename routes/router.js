@@ -116,7 +116,7 @@ router.get('/faucetAccountRewards', async function (req, res, next) {
       blockTimestamp : { $lte : parseFloat(timestamp)},  
     }
 
-    const response = await dripService.getDripFaucetEvents(address.toLowerCase(), timestamp, query, perPage, (page - 1) * perPage, sortBy, sortByDesc, 1000)
+    const response = await dripService.getDripFaucetEvents(address.toLowerCase(), timestamp, query, perPage, (page - 1) * perPage, sortBy, sortByDesc, 1000, true)
     res.json({...response, page, perPage});
   } catch (err) {
     console.error(`Error while executing /faucetAccountRewards`, err.message);

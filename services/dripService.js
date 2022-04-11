@@ -1,5 +1,14 @@
 import * as dbService from './dbService.js'
 
+const isDonator = async (address, dbo) => {
+  const donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
+  
+  if(!donator){
+    return false;
+  }
+  return donator.donatedBNB >= 0.04 || donator.donatedBUSD >= 15.0;
+}
+
 export async function getDripFaucetMonthlyNewAccounts() {
   var client
   try {
@@ -192,6 +201,9 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
     var dbo = client.db(process.env.DB_NAME)
 
     const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX)
+    const address = query.addr || query.addrTo
+
+    const isAddressDonator = await isDonator(address, dbo);
 
     var start = new Date().getTime()
     var count = await collection.countDocuments(query)
@@ -205,8 +217,13 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
     pipeline.push({ $match: query })
 
     pipeline.push({ $sort: sort })
-    pipeline.push({ $skip: skip })
-    pipeline.push({ $limit: limit })
+
+    if(isAddressDonator){
+      pipeline.push({ $skip: skip })
+      pipeline.push({ $limit: limit })
+    }else{
+      pipeline.push({ $limit: 10 })
+    }
 
     const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
     {
@@ -215,7 +232,7 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
 
     // console.log(results)
 
-    return { total: count, results }
+    return { total: count, results, isDonator: isAddressDonator }
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
@@ -314,13 +331,15 @@ const countDocuments = async function(addr, timestamp, collection){
 }
 
 const count_cache = new Map()
-export async function getDripFaucetEvents(key, timestamp, query, limit, skip, sortBy, sortByDesc, maxResults) {
+export async function getDripFaucetEvents(key, timestamp, query, limit, skip, sortBy, sortByDesc, maxResults, checkDonator) {
 
   var client
   try {
     client = await dbService.client()
     await client.connect()
     var dbo = client.db(process.env.DB_NAME)
+
+    const isAddressDonator = !checkDonator || await isDonator(query.addr, dbo);
 
     const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS)
 
@@ -336,7 +355,7 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
     pipeline.push({ $match: query })
     pipeline.push({ $sort: sort })
 
-    pipeline.push({ $limit: 1001 })
+    pipeline.push({ $limit: isAddressDonator?1001:10 })
 
     start = new Date().getTime()
     const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
@@ -347,7 +366,7 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
     const hasMore = results.length > 1000
 
     console.log('Search took ', new Date().getTime() - start, 'ms')
-    return { total: hasMore? 1000: results.length, results: results.slice(skip, skip + limit), hasMore}
+    return { total: hasMore? 1000: results.length, results: isAddressDonator?results.slice(skip, skip + limit): results, hasMore}
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
