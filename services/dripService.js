@@ -366,7 +366,7 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
     const hasMore = results.length > 1000
 
     console.log('Search took ', new Date().getTime() - start, 'ms')
-    return { total: hasMore? 1000: results.length, results: isAddressDonator?results.slice(skip, skip + limit): results, hasMore}
+    return { total: hasMore? 1000: results.length, results: isAddressDonator?results.slice(skip, skip + limit): results, hasMore, isDonator:isAddressDonator}
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
