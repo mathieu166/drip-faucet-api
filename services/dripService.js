@@ -349,6 +349,10 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
 
     var pipeline = []
 
+    if(!isAddressDonator){
+      delete query.blockTimestamp
+    }
+
     var sort = {}
     sort[sortBy] = parseInt(sortByDesc) * -1
 
