@@ -1,5 +1,7 @@
 import * as dbService from './dbService.js'
 
+const TRIAL_LIMIT = 10;
+
 const isDonator = async (address, dbo) => {
   const donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
   
@@ -222,7 +224,7 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
       pipeline.push({ $skip: skip })
       pipeline.push({ $limit: limit })
     }else{
-      pipeline.push({ $limit: 10 })
+      pipeline.push({ $limit: TRIAL_LIMIT })
     }
 
     const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
@@ -359,7 +361,7 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
     pipeline.push({ $match: query })
     pipeline.push({ $sort: sort })
 
-    pipeline.push({ $limit: isAddressDonator?1001:10 })
+    pipeline.push({ $limit: isAddressDonator?1001:TRIAL_LIMIT })
 
     start = new Date().getTime()
     const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
