@@ -11,98 +11,118 @@ const isDonator = async (address, dbo) => {
   return donator.donatedBNB >= 0.04 || donator.donatedBUSD >= 15.0;
 }
 
+const MONTHLY_NEW_ACCOUNTS = 1;
+const DAILY_NEW_ACCOUNTS = 2;
+const USER_BEHAVIOR = 3;
+const PLAYER_DEPOSITS = 4;
+
+const INTERVAL_BETWEEN_REFRESH = 30 * 60 * 1000
+var cache = new Map();
+
 export async function getDripFaucetMonthlyNewAccounts() {
-  var client
+  var NOW = new Date().getTime()
+
+  var cached = cache.get(MONTHLY_NEW_ACCOUNTS)
+
+  //Refresh every 6 hours
+  if(cached && cached.updated_on + (INTERVAL_BETWEEN_REFRESH * 12) > NOW){
+    return cached.values
+  }
+
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
     
-    return await dbo.collection(dbService.DRIP_FAUCET_MONTHLY_NEW_ACCOUNTS).find().sort({_id: 1}).toArray()
-      
+    const values = await dbo.collection(dbService.DRIP_FAUCET_MONTHLY_NEW_ACCOUNTS).find().sort({_id: 1}).toArray()
+    cache.set(MONTHLY_NEW_ACCOUNTS, {updated_on: NOW, values})
+
+    return values
   } catch (e) {
     console.error('getDripFaucetMonthlyNewAccounts error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
 
 const SEC_IN_A_MONTH = 60 * 60 * 24 * 30;
 export async function getDripFaucetDailyNewAccounts() {
-  var client
+  var NOW = new Date().getTime()
+
+  var cached = cache.get(DAILY_NEW_ACCOUNTS)
+  
+  //Refresh every 30 minutes
+  if(cached && cached.updated_on + INTERVAL_BETWEEN_REFRESH > NOW){
+    return cached.values
+  }
+
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
     const lastEntry = await dbo.collection(dbService.DRIP_FAUCET_DAILY_NEW_ACCOUNTS).findOne({}, { sort: { start_timestamp: -1 }, limit: 1 })
 
     if(lastEntry){
-      return await dbo.collection(dbService.DRIP_FAUCET_DAILY_NEW_ACCOUNTS).find({start_timestamp: {$gte: lastEntry.start_timestamp - SEC_IN_A_MONTH}}).toArray()
+      const values = await dbo.collection(dbService.DRIP_FAUCET_DAILY_NEW_ACCOUNTS).find({start_timestamp: {$gte: lastEntry.start_timestamp - SEC_IN_A_MONTH}}).toArray()
+      cache.set(DAILY_NEW_ACCOUNTS, {updated_on: NOW, values})
+      return values
     }
 
     return []
   } catch (e) {
     console.error('getDripFaucetDailyNewAccounts error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
   }
 }
 
 
 export async function getDripFaucetDailyMethod() {
-  var client
+  var NOW = new Date().getTime()
+
+  var cached = cache.get(USER_BEHAVIOR)
+
+  //Refresh every 30 minutes
+  if(cached && cached.updated_on + INTERVAL_BETWEEN_REFRESH > NOW){
+    return cached.values
+  }
+
   try {
     const SEC_TO_GO_BACK_TO = 60 * 60 * 24 * 180;
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
     const lastEntry = await dbo.collection(dbService.DRIP_FAUCET_DAILY_METHOD).findOne({}, { sort: { start_timestamp: -1 }, limit: 1 })
 
     if(lastEntry){
-      return await dbo.collection(dbService.DRIP_FAUCET_DAILY_METHOD).find({start_timestamp: {$gte: lastEntry.start_timestamp - SEC_TO_GO_BACK_TO}}).sort({start_timestamp: 1}).toArray()
+      const values = await dbo.collection(dbService.DRIP_FAUCET_DAILY_METHOD).find({start_timestamp: {$gte: lastEntry.start_timestamp - SEC_TO_GO_BACK_TO}}).sort({start_timestamp: 1}).toArray()
+      cache.set(USER_BEHAVIOR, {updated_on: NOW, values})
+      return values
     }
 
     return []
   } catch (e) {
     console.error('getDripFaucetDailyMethod error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
 
 export async function getDripFaucetPlayerDeposit() {
-  var client
+  var NOW = new Date().getTime()
+
+  var cached = cache.get(PLAYER_DEPOSITS)
+
+  //Refresh every 30 minutes
+  if(cached && cached.updated_on + INTERVAL_BETWEEN_REFRESH > NOW){
+    return cached.values
+  }
+
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
+    const values = await dbo.collection(dbService.DRIP_FAUCET_PLAYER_DEPOSIT).find().sort({index: 1}).toArray()
 
-    return await dbo.collection(dbService.DRIP_FAUCET_PLAYER_DEPOSIT).find().sort({index: 1}).toArray()
+    cache.set(PLAYER_DEPOSITS, {updated_on: NOW, values})
+    return values
   
   } catch (e) {
     console.error('getDripFaucetDailyMethod error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
 
 export async function getDripAccountDailyRewards(accountAddress) {
@@ -168,11 +188,8 @@ export async function getDripAccountDailyRewards(accountAddress) {
     // }
 ]
 
-  var client
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
     const start = new Date().getTime()
     const values = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
@@ -186,21 +203,13 @@ export async function getDripAccountDailyRewards(accountAddress) {
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
 
 export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByDesc) {
 
-  var client
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
     const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX)
     const address = query.addr || query.addrTo
@@ -238,21 +247,12 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
 
 export async function getDripAccountAirdrops(query, limit, skip, sortBy, sortByDesc) {
-
-  var client
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
     const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX)
 
@@ -280,12 +280,7 @@ export async function getDripAccountAirdrops(query, limit, skip, sortBy, sortByD
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
 
 
@@ -334,12 +329,8 @@ const countDocuments = async function(addr, timestamp, collection){
 
 const count_cache = new Map()
 export async function getDripFaucetEvents(key, timestamp, query, limit, skip, sortBy, sortByDesc, maxResults, checkDonator) {
-
-  var client
   try {
-    client = await dbService.client()
-    await client.connect()
-    var dbo = client.db(process.env.DB_NAME)
+    const dbo = await dbService.getConnectionPool()
 
     const isAddressDonator = !checkDonator || await isDonator(query.addr, dbo);
 
@@ -376,10 +367,5 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
     throw e
-  } finally {
-
-    if(client){
-      client.close()
-    } 
-  }
+  } 
 }
