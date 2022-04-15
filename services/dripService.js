@@ -1,6 +1,6 @@
 import * as dbService from './dbService.js'
 
-const TRIAL_LIMIT = 10;
+const TRIAL_LIMIT = 5;
 
 const isDonator = async (address, dbo) => {
   const donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
