@@ -15,6 +15,7 @@ const MONTHLY_NEW_ACCOUNTS = 1;
 const DAILY_NEW_ACCOUNTS = 2;
 const USER_BEHAVIOR = 3;
 const PLAYER_DEPOSITS = 4;
+const PLAYER_CLAIM_BY_RANGE = 5;
 
 const INTERVAL_BETWEEN_REFRESH = 30 * 60 * 1000
 var cache = new Map();
@@ -117,6 +118,30 @@ export async function getDripFaucetPlayerDeposit() {
     const values = await dbo.collection(dbService.DRIP_FAUCET_PLAYER_DEPOSIT).find().sort({index: 1}).toArray()
 
     cache.set(PLAYER_DEPOSITS, {updated_on: NOW, values})
+    return values
+  
+  } catch (e) {
+    console.error('getDripFaucetDailyMethod error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getDripFaucetPlayerClaimByRange() {
+  var NOW = new Date().getTime()
+
+  var cached = cache.get(PLAYER_CLAIM_BY_RANGE)
+
+  //Refresh every 30 minutes
+  // if(cached && cached.updated_on + INTERVAL_BETWEEN_REFRESH > NOW){
+  //   return cached.values
+  // }
+
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const values = await dbo.collection(dbService.DRIP_PLAYER_CLAIM_BY_RANGE).find().sort({index: 1}).toArray()
+
+    cache.set(PLAYER_CLAIM_BY_RANGE, {updated_on: NOW, values})
     return values
   
   } catch (e) {

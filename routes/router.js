@@ -37,7 +37,17 @@ router.get('/faucetPlayerDeposit', async function (req, res, next) {
     const response = await dripService.getDripFaucetPlayerDeposit()
     res.json(response);
   } catch (err) {
-    console.error(`Error while executing /faucetDailyMethod`, err.message);
+    console.error(`Error while executing /faucetPlayerDeposit`, err.message);
+    next(err);
+  }
+});
+
+router.get('/faucetPlayerClaimByRange', async function (req, res, next) {
+  try {
+    const response = await dripService.getDripFaucetPlayerClaimByRange()
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /faucetPlayerClaimByRange`, err.message);
     next(err);
   }
 });
