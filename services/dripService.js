@@ -1,8 +1,19 @@
 import * as dbService from './dbService.js'
+import LastXDaysRewardsPerDownlineLevel from '../queries/LastXDaysRewardsPerDownlineLevel.js';
+import AllTimeRewardsPerDownlineLevel from '../queries/AllTimeRewardsPerDownlineLevel.js';
+import RewardsPerDownlineLevel from '../queries/RewardsPerDownlineLevel.js';
+import NewPlayersPerDownlineLevel from '../queries/NewPlayersPerDownlineLevel.js';
 
 const TRIAL_LIMIT = 5;
+const DAY = (60 * 60 * 24)
 
 const isDonator = async (address, dbo) => {
+  const website = await dbo.collection(dbService.DRIP_FAUCET_WEBSITE).findOne({_id: 'prod'})
+
+  if(!website.donationRequired){
+    return true
+  }
+
   const donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
   
   if(!donator){
@@ -391,6 +402,122 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
     return { total: hasMore? 1000: results.length, results: isAddressDonator?results.slice(skip, skip + limit): results, hasMore, isDonator:isAddressDonator}
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getDailyRewardsPerDownlineLevels(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const isAddressDonator = await isDonator(address, dbo);
+
+    var timestamp = (Date.now() / 1000) - (isAddressDonator? 7 * DAY: 1 * DAY)
+    //Get the beginning of the day.
+    timestamp = timestamp - ( timestamp % 86400)    
+
+    var pipeline = LastXDaysRewardsPerDownlineLevel(address, timestamp)
+    
+    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+    {
+      "allowDiskUse": true
+    }).toArray()
+
+    return { results, isDonator:isAddressDonator}
+  } catch (e) {
+    console.error('getRewardsPerDownlineLevels error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getAllTimeRewardsPerDownlineLevels(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const isAddressDonator = await isDonator(address, dbo);
+    let results = []
+    if(isAddressDonator){
+      var pipeline = AllTimeRewardsPerDownlineLevel(address)
+  
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+      {
+        "allowDiskUse": true
+      }).toArray()
+    }
+
+    return { results, isDonator:isAddressDonator}
+  } catch (e) {
+    console.error('getRewardsPerDownlineLevels error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getRewardsPerDownlineLevel(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const isAddressDonator = await isDonator(address, dbo);
+
+    var results = []
+    if(isAddressDonator){
+      const NOW = Date.now()
+
+      //REWARDS
+      var values24h = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(RewardsPerDownlineLevel(address, (NOW / 1000) -  DAY),
+      {
+        "allowDiskUse": true
+      }).toArray()
+
+      var values7d = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(RewardsPerDownlineLevel(address, (NOW / 1000) -  (7 * DAY)),
+      {
+        "allowDiskUse": true
+      }).toArray()
+
+      var value24h = values24h.find(p => p._id === 1)
+      var value7d = values7d.find(p => p._id === 1)
+
+      results.push({name:'direct-rewards', '24h': value24h?value24h.sum_amount:0, '7davg': value7d?value7d.sum_amount/7.0:0})
+
+      value24h = values24h.reduce((accumulator, object) => {
+        return accumulator + object.sum_amount;
+      }, 0);
+
+      value7d = values7d.reduce((accumulator, object) => {
+        return accumulator + object.sum_amount;
+      }, 0);
+      
+      results.push({name:'all-rewards', '24h': value24h?value24h:0, '7davg': value7d/7.0})
+
+      //NEW PLAYERS
+      values24h = await dbo.collection(dbService.DRIP_FAUCET_PLAYER_HIERARCHY).aggregate(NewPlayersPerDownlineLevel(address, (NOW / 1000) -  DAY),
+      {
+        "allowDiskUse": true
+      }).toArray()
+      
+      values7d = await dbo.collection(dbService.DRIP_FAUCET_PLAYER_HIERARCHY).aggregate(NewPlayersPerDownlineLevel(address, (NOW / 1000) -  (7 * DAY)),
+      {
+        "allowDiskUse": true
+      }).toArray()
+
+      value24h = values24h.find(p => p._id === 1)
+      value7d = values7d.find(p => p._id === 1)
+
+      results.push({name:'direct-newplayers', '24h': value24h?value24h.count:0, '7davg': value7d?value7d.count/7.0:0})
+
+      value24h = values24h.reduce((accumulator, object) => {
+        return accumulator + object.count;
+      }, 0);
+
+      value7d = values7d.reduce((accumulator, object) => {
+        return accumulator + object.count;
+      }, 0);
+      
+      results.push({name:'all-newplayers', '24h': value24h?value24h:0, '7davg': value7d/7.0})
+    }
+
+    return { results, isDonator:isAddressDonator}
+  } catch (e) {
+    console.error('getRewardsPerDownlineLevels error: ' + e.message)
     throw e
   } 
 }

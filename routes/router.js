@@ -134,4 +134,52 @@ router.get('/faucetAccountRewards', async function (req, res, next) {
   }
 });
 
+router.get('/dailyRewardsPerDownlineLevel', async function (req, res, next) {
+  try {
+    var address = req.query.address
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getDailyRewardsPerDownlineLevels(address.toLowerCase())
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /faucetAccountRewards`, err.message);
+    next(err);
+  }
+});
+
+router.get('/allTimeRewardsPerDownlineLevel', async function (req, res, next) {
+  try {
+    var address = req.query.address
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getAllTimeRewardsPerDownlineLevels(address.toLowerCase())
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /allTimeRewardsPerDownlineLevel`, err.message);
+    next(err);
+  }
+});
+
+router.get('/getFaucetPlayerDownlineStats', async function (req, res, next) {
+  try {
+    var address = req.query.address
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getRewardsPerDownlineLevel(address.toLowerCase())
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getRewardsPerDownlineLevel`, err.message);
+    next(err);
+  }
+});
+
 export default router

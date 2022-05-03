@@ -7,6 +7,8 @@ export const DRIP_FAUCET_DAILY_METHOD = 'DripFaucetDailyMethod'
 export const DRIP_FAUCET_PLAYER_DEPOSIT = 'DripFaucetPlayerDeposit'
 export const DRIP_FAUCET_DONATORS = 'DripFaucetDonators'
 export const DRIP_PLAYER_CLAIM_BY_RANGE = 'DripPlayerClaimByRange'
+export const DRIP_FAUCET_WEBSITE = 'DripFaucetWebsite'
+export const DRIP_FAUCET_PLAYER_HIERARCHY = 'DripFaucetPlayerHierarchy'
 
 var connectionPool;
 
