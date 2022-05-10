@@ -3,6 +3,7 @@ import LastXDaysRewardsPerDownlineLevel from '../queries/LastXDaysRewardsPerDown
 import AllTimeRewardsPerDownlineLevel from '../queries/AllTimeRewardsPerDownlineLevel.js';
 import RewardsPerDownlineLevel from '../queries/RewardsPerDownlineLevel.js';
 import NewPlayersPerDownlineLevel from '../queries/NewPlayersPerDownlineLevel.js';
+import DownlineActions from '../queries/DownlineActions.js';
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
@@ -28,7 +29,8 @@ const USER_BEHAVIOR = 3;
 const PLAYER_DEPOSITS = 4;
 const PLAYER_CLAIM_BY_RANGE = 5;
 
-const INTERVAL_BETWEEN_REFRESH = 30 * 60 * 1000
+const MINUTE = 60 * 1000
+const INTERVAL_BETWEEN_REFRESH = 30 * MINUTE
 var cache = new Map();
 
 export async function getDripFaucetMonthlyNewAccounts() {
@@ -452,10 +454,17 @@ export async function getAllTimeRewardsPerDownlineLevels(address) {
   } 
 }
 
+const rewardsPerDownlineCache = new Map()
 export async function getRewardsPerDownlineLevel(address) {
+
+  const cached = rewardsPerDownlineCache.get(address)
+  const NOW = new Date().getTime()
+  if(cached && cached.timestamp > (NOW - (1 * MINUTE))){
+    return cached.value
+  }
+
   try {
     const dbo = await dbService.getConnectionPool()
-
     const isAddressDonator = await isDonator(address, dbo);
 
     var results = []
@@ -513,11 +522,36 @@ export async function getRewardsPerDownlineLevel(address) {
       }, 0);
       
       results.push({name:'all-newplayers', '24h': value24h?value24h:0, '7davg': value7d/7.0})
+    } 
+
+    const toReturn = { results, isDonator:isAddressDonator}
+
+    rewardsPerDownlineCache.set(address,  { timestamp: NOW, value: toReturn})
+
+    return toReturn
+  } catch (e) {
+    console.error('getRewardsPerDownlineLevels error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getDownlineActions(from, to, upline, method) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const isAddressDonator = await isDonator(upline, dbo);
+    let results = []
+    if(isAddressDonator){
+      var pipeline = DownlineActions(from, to, upline, method)
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+      {
+        "allowDiskUse": true
+      }).toArray()
     }
 
     return { results, isDonator:isAddressDonator}
   } catch (e) {
-    console.error('getRewardsPerDownlineLevels error: ' + e.message)
+    console.error('getDownlineActions error: ' + e.message)
     throw e
   } 
 }

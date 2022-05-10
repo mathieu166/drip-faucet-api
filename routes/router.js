@@ -2,6 +2,8 @@ import * as dripService from '../services/dripService.js'
 import express from 'express'
 const router = express.Router()
 
+const DAY = 60 * 60 * 24
+
 router.get('/faucetMonthlyNewAccounts', async function (req, res, next) {
   try {
     const response = await dripService.getDripFaucetMonthlyNewAccounts()
@@ -178,6 +180,28 @@ router.get('/getFaucetPlayerDownlineStats', async function (req, res, next) {
     res.json(response);
   } catch (err) {
     console.error(`Error while executing /getRewardsPerDownlineLevel`, err.message);
+    next(err);
+  }
+});
+
+router.get('/getFaucetPlayerDownlineActions', async function (req, res, next) {
+  try {
+    const NOW = new Date().getTime() / 1000
+
+    var address = req.query.address
+    var method = req.query.method
+
+    var fromTimestamp = !isNaN(req.query.fromTimestamp) ? parseFloat(req.query.fromTimestamp) : NOW - (7 * DAY)
+    var toTimestamp = !isNaN(req.query.toTimestamp) ? parseFloat(req.query.toTimestamp) : NOW + 10000
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getDownlineActions(fromTimestamp, toTimestamp, address, method)
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getFaucetPlayerDownlineActions`, err.message);
     next(err);
   }
 });
