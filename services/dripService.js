@@ -555,3 +555,48 @@ export async function getDownlineActions(from, to, upline, method) {
     throw e
   } 
 }
+
+export async function getDownlineDetailActions(from, to, upline, method, limit, skip) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const isAddressDonator = await isDonator(upline, dbo);
+    let results = []
+    let total = 0
+    if(isAddressDonator){
+      const query = {upline: upline, blockTimestamp: {$gte: from, $lte: to}}
+
+      if(method){
+        query.method = method
+      }
+      
+      total = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).count(query)
+      
+      var pipeline = []
+      
+      var sort = {blockTimestamp: -1}
+      const project = {
+        addr: 1,
+        method: 1,
+        blockTimestamp: 1,
+        amount: 1,
+        transactionHash: 1
+      }
+
+      pipeline.push({ $match: query })
+      pipeline.push({ $sort: sort })
+      pipeline.push({ $project: project})
+      pipeline.push({ $skip: skip })
+      pipeline.push({ $limit: limit })
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+        {
+          "allowDiskUse": true
+        }).toArray()
+        
+    }
+    return {total,  results, isDonator:isAddressDonator}
+  } catch (e) {
+    console.error('getDownlineDetailActions error: ' + e.message)
+    throw e
+  } 
+}
