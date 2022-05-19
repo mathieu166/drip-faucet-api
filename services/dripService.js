@@ -3,6 +3,7 @@ import LastXDaysRewardsPerDownlineLevel from '../queries/LastXDaysRewardsPerDown
 import AllTimeRewardsPerDownlineLevel from '../queries/AllTimeRewardsPerDownlineLevel.js';
 import RewardsPerDownlineLevel from '../queries/RewardsPerDownlineLevel.js';
 import NewPlayersPerDownlineLevel from '../queries/NewPlayersPerDownlineLevel.js';
+import DownlineBehavior from '../queries/DownlineBehavior.js';
 import DownlineActions from '../queries/DownlineActions.js';
 
 const TRIAL_LIMIT = 5;
@@ -595,6 +596,28 @@ export async function getDownlineDetailActions(from, to, upline, method, limit, 
         
     }
     return {total,  results, isDonator:isAddressDonator}
+  } catch (e) {
+    console.error('getDownlineDetailActions error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getDownlineBehavior(from, to, upline, directOnly) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const isAddressDonator = await isDonator(upline, dbo);
+    let results = []
+    if(isAddressDonator){
+      const pipeline = DownlineBehavior(from, to, upline, directOnly)
+
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+        {
+          "allowDiskUse": true
+        }).toArray()
+        
+    }
+    return {results, isDonator:isAddressDonator}
   } catch (e) {
     console.error('getDownlineDetailActions error: ' + e.message)
     throw e

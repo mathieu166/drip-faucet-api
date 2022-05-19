@@ -230,4 +230,26 @@ router.get('/getFaucetPlayerDownlineDetailActions', async function (req, res, ne
   }
 });
 
+router.get('/getFaucetPlayerDownlineBehavior', async function (req, res, next) {
+  try {
+    const NOW = new Date().getTime() / 1000
+
+    var address = req.query.address
+    var directOnly = !req.query.directOnly || req.query.directOnly === "1"
+
+    var fromTimestamp = !isNaN(req.query.fromTimestamp) ? parseFloat(req.query.fromTimestamp) : NOW - (7 * DAY)
+    var toTimestamp = !isNaN(req.query.toTimestamp) ? parseFloat(req.query.toTimestamp) : NOW + 10000
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getDownlineBehavior(fromTimestamp, toTimestamp, address, directOnly)
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getFaucetPlayerDownlineBehavior`, err.message);
+    next(err);
+  }
+});
+
 export default router
