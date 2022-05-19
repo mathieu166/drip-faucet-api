@@ -1,8 +1,7 @@
-export default (from, to, upline, method) => {
+export default (from, to, upline, method, directOnly) => {
     var pipeline = [
         {
             "$match": {
-                "upline": upline,
                 "method": method,
                 "blockTimestamp": {
                     "$gte": from,
@@ -28,5 +27,11 @@ export default (from, to, upline, method) => {
         }
     ]
 
+    if(directOnly){
+        pipeline[0]["$match"]["upline"] = upline
+    }else{
+        pipeline[0]["$match"]["uplines.upline"] = upline
+    }
+    
     return pipeline
 }

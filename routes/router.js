@@ -191,6 +191,8 @@ router.get('/getFaucetPlayerDownlineActions', async function (req, res, next) {
     var address = req.query.address
     var method = req.query.method
 
+    var directOnly = !req.query.directOnly || req.query.directOnly === "1"
+    
     var fromTimestamp = !isNaN(req.query.fromTimestamp) ? parseFloat(req.query.fromTimestamp) : NOW - (7 * DAY)
     var toTimestamp = !isNaN(req.query.toTimestamp) ? parseFloat(req.query.toTimestamp) : NOW + 10000
 
@@ -198,7 +200,7 @@ router.get('/getFaucetPlayerDownlineActions', async function (req, res, next) {
       return res.status(500).json({message: 'Must provide faucet account address'})
     }
 
-    const response = await dripService.getDownlineActions(fromTimestamp, toTimestamp, address, method)
+    const response = await dripService.getDownlineActions(fromTimestamp, toTimestamp, address, method, directOnly)
     res.json(response);
   } catch (err) {
     console.error(`Error while executing /getFaucetPlayerDownlineActions`, err.message);

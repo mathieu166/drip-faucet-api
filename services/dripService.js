@@ -536,14 +536,14 @@ export async function getRewardsPerDownlineLevel(address) {
   } 
 }
 
-export async function getDownlineActions(from, to, upline, method) {
+export async function getDownlineActions(from, to, upline, method, directOnly) {
   try {
     const dbo = await dbService.getConnectionPool()
 
     const isAddressDonator = await isDonator(upline, dbo);
     let results = []
     if(isAddressDonator){
-      var pipeline = DownlineActions(from, to, upline, method)
+      var pipeline = DownlineActions(from, to, upline, method, directOnly)
       results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
       {
         "allowDiskUse": true
