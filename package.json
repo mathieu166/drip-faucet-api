@@ -27,6 +27,7 @@
     "ethers": "^5.5.2",
     "express": "^4.17.1",
     "express-rate-limit": "^5.5.1",
-    "mongodb": "^4.5.0"
+    "mongodb": "^4.5.0",
+    "web3": "^1.7.3"
   }
 }

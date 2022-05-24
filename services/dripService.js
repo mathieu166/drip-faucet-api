@@ -10,6 +10,8 @@ const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
 
 const isDonator = async (address, dbo) => {
+  // return false
+
   const website = await dbo.collection(dbService.DRIP_FAUCET_WEBSITE).findOne({_id: 'prod'})
 
   if(!website.donationRequired){
@@ -373,35 +375,38 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
 
     const isAddressDonator = !checkDonator || await isDonator(query.addr, dbo);
 
-    const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS)
+    let hasMore = false
+    let results = []
+    if(isAddressDonator){
 
-    var start = new Date().getTime()
+      
+      const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS)
+      
+      var start = new Date().getTime()
 
-    console.log('Count took ', new Date().getTime() - start, 'ms')
+      var pipeline = []
+      
+      if(!isAddressDonator){
+        delete query.blockTimestamp
+      }
 
-    var pipeline = []
+      var sort = {}
+      sort[sortBy] = parseInt(sortByDesc) * -1
+      
+      pipeline.push({ $match: query })
+      pipeline.push({ $sort: sort })
 
-    if(!isAddressDonator){
-      delete query.blockTimestamp
+      pipeline.push({ $limit: 1001 })
+      
+      start = new Date().getTime()
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+      {
+        "allowDiskUse": true
+      }).toArray()
+      
+      hasMore = results.length > 1000
     }
 
-    var sort = {}
-    sort[sortBy] = parseInt(sortByDesc) * -1
-
-    pipeline.push({ $match: query })
-    pipeline.push({ $sort: sort })
-
-    pipeline.push({ $limit: isAddressDonator?1001:TRIAL_LIMIT })
-
-    start = new Date().getTime()
-    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
-    {
-      "allowDiskUse": true
-    }).toArray()
-
-    const hasMore = results.length > 1000
-
-    console.log('Search took ', new Date().getTime() - start, 'ms')
     return { total: hasMore? 1000: results.length, results: isAddressDonator?results.slice(skip, skip + limit): results, hasMore, isDonator:isAddressDonator}
   } catch (e) {
     console.error('getDripAccountHistory error: ' + e.message)

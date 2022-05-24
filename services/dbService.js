@@ -5,10 +5,13 @@ export const DRIP_FAUCET_MONTHLY_NEW_ACCOUNTS = 'DripFaucetMonthlyNewAccounts'
 export const DRIP_FAUCET_DAILY_NEW_ACCOUNTS = 'DripFaucetDailyNewAccounts'
 export const DRIP_FAUCET_DAILY_METHOD = 'DripFaucetDailyMethod'
 export const DRIP_FAUCET_PLAYER_DEPOSIT = 'DripFaucetPlayerDeposit'
+export const DRIP_FAUCET_PLAYERS = 'DripFaucetPlayers'
 export const DRIP_FAUCET_DONATORS = 'DripFaucetDonators'
 export const DRIP_PLAYER_CLAIM_BY_RANGE = 'DripPlayerClaimByRange'
 export const DRIP_FAUCET_WEBSITE = 'DripFaucetWebsite'
 export const DRIP_FAUCET_PLAYER_HIERARCHY = 'DripFaucetPlayerHierarchy'
+
+export const DRIP_FAUCET_STATS_ADDRESSES = 'DripFaucetStatsAddresses'
 
 var connectionPool;
 

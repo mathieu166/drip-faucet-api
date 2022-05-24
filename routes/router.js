@@ -1,4 +1,5 @@
 import * as dripService from '../services/dripService.js'
+import * as statsService from '../services/statsService.js'
 import express from 'express'
 const router = express.Router()
 
@@ -192,7 +193,7 @@ router.get('/getFaucetPlayerDownlineActions', async function (req, res, next) {
     var method = req.query.method
 
     var directOnly = !req.query.directOnly || req.query.directOnly === "1"
-    
+
     var fromTimestamp = !isNaN(req.query.fromTimestamp) ? parseFloat(req.query.fromTimestamp) : NOW - (7 * DAY)
     var toTimestamp = !isNaN(req.query.toTimestamp) ? parseFloat(req.query.toTimestamp) : NOW + 10000
 
@@ -250,6 +251,22 @@ router.get('/getFaucetPlayerDownlineBehavior', async function (req, res, next) {
     res.json(response);
   } catch (err) {
     console.error(`Error while executing /getFaucetPlayerDownlineBehavior`, err.message);
+    next(err);
+  }
+});
+
+const sources = ['prod', 'beta']
+router.post('/postAddAddress', async function (req, res, next) {
+  try {
+    var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress 
+
+    if(req.body.address && req.body.source && sources.find(p=>p===req.body.source)){
+      await statsService.addNewFaucetAddress(req.body.address, ip, req.body.source)
+    }
+
+    res.json({});
+  } catch (err) {
+    console.error(`Error while executing /faucetMonthlyNewAccounts`, err.message);
     next(err);
   }
 });
