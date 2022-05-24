@@ -377,7 +377,8 @@ export async function getDripFaucetEvents(key, timestamp, query, limit, skip, so
 
     let hasMore = false
     let results = []
-    if(isAddressDonator){
+    const isMainDevWallet = key.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+    if(isAddressDonator && !isMainDevWallet){
 
       
       const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS)
@@ -420,16 +421,20 @@ export async function getDailyRewardsPerDownlineLevels(address) {
 
     const isAddressDonator = await isDonator(address, dbo);
 
-    var timestamp = (Date.now() / 1000) - (isAddressDonator? 7 * DAY: 1 * DAY)
-    //Get the beginning of the day.
-    timestamp = timestamp - ( timestamp % 86400)    
-
-    var pipeline = LastXDaysRewardsPerDownlineLevel(address, timestamp)
-    
-    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
-    {
-      "allowDiskUse": true
-    }).toArray()
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+    let results = []
+    if(!isAddressDonator && !isMainDevWallet){
+      var timestamp = (Date.now() / 1000) - (isAddressDonator? 7 * DAY: 1 * DAY)
+      //Get the beginning of the day.
+      timestamp = timestamp - ( timestamp % 86400)    
+      
+      var pipeline = LastXDaysRewardsPerDownlineLevel(address, timestamp)
+      
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+        {
+          "allowDiskUse": true
+        }).toArray()
+    }
 
     return { results, isDonator:isAddressDonator}
   } catch (e) {
@@ -443,8 +448,9 @@ export async function getAllTimeRewardsPerDownlineLevels(address) {
     const dbo = await dbService.getConnectionPool()
 
     const isAddressDonator = await isDonator(address, dbo);
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     let results = []
-    if(isAddressDonator){
+    if(isAddressDonator && !isMainDevWallet){
       var pipeline = AllTimeRewardsPerDownlineLevel(address)
   
       results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
@@ -472,9 +478,9 @@ export async function getRewardsPerDownlineLevel(address) {
   try {
     const dbo = await dbService.getConnectionPool()
     const isAddressDonator = await isDonator(address, dbo);
-
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     var results = []
-    if(isAddressDonator){
+    if(isAddressDonator && !isMainDevWallet){
       const NOW = Date.now()
 
       //REWARDS
@@ -541,13 +547,15 @@ export async function getRewardsPerDownlineLevel(address) {
   } 
 }
 
+
 export async function getDownlineActions(from, to, upline, method, directOnly) {
   try {
     const dbo = await dbService.getConnectionPool()
 
     const isAddressDonator = await isDonator(upline, dbo);
+    const isMainDevWallet = upline.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     let results = []
-    if(isAddressDonator){
+    if(isAddressDonator && !isMainDevWallet){
       var pipeline = DownlineActions(from, to, upline, method, directOnly)
       results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
       {
@@ -567,9 +575,10 @@ export async function getDownlineDetailActions(from, to, upline, method, limit, 
     const dbo = await dbService.getConnectionPool()
 
     const isAddressDonator = await isDonator(upline, dbo);
+    const isMainDevWallet = upline.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     let results = []
     let total = 0
-    if(isAddressDonator){
+    if(isAddressDonator && !isMainDevWallet){
       const query = {upline: upline, blockTimestamp: {$gte: from, $lte: to}}
 
       if(method){
@@ -612,8 +621,9 @@ export async function getDownlineBehavior(from, to, upline, directOnly) {
     const dbo = await dbService.getConnectionPool()
 
     const isAddressDonator = await isDonator(upline, dbo);
+    const isMainDevWallet = upline.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     let results = []
-    if(isAddressDonator){
+    if(isAddressDonator && !isMainDevWallet){
       const pipeline = DownlineBehavior(from, to, upline, directOnly)
 
       results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
