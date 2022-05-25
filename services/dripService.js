@@ -247,19 +247,26 @@ export async function getDripAccountDailyRewards(accountAddress) {
   } 
 }
 
-export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByDesc) {
+export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByDesc, uplineOnly) {
 
   try {
     const dbo = await dbService.getConnectionPool()
 
     const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX)
+    const playerCollection = dbo.collection(dbService.DRIP_FAUCET_PLAYERS)
     const address = query.addr || query.addrTo
 
     const isAddressDonator = await isDonator(address, dbo);
+    
+    if(isAddressDonator && uplineOnly){
+      const player = await playerCollection.findOne({_id: address.toLowerCase()})
 
-    var start = new Date().getTime()
+      if(player && player.direct_upline){
+        query.addr = player.direct_upline.toLowerCase()
+      }
+    }
+
     var count = await collection.countDocuments(query)
-    console.log('Count took ', new Date().getTime() - start, 'ms')
 
     var pipeline = []
 

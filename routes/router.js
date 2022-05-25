@@ -81,6 +81,7 @@ router.get('/faucetAccountHistory', async function (req, res, next) {
 router.get('/faucetAccountAirdrops', async function (req, res, next) {
   try {
     var address = req.query.address
+    var uplineOnly = req.query.uplineOnly === "1"
 
     if(!address || address.trim().length == 0){
       return res.status(500).json({message: 'Must provide faucet account address'})
@@ -93,7 +94,7 @@ router.get('/faucetAccountAirdrops', async function (req, res, next) {
 
     var query = { addrTo: address.toLowerCase() }
 
-    const response = await dripService.getDripAccountHistory2(query, perPage, (page - 1) * perPage, sortBy, sortByDesc)
+    const response = await dripService.getDripAccountHistory2(query, perPage, (page - 1) * perPage, sortBy, sortByDesc, uplineOnly)
     res.json({...response, page, perPage});
   } catch (err) {
     console.error(`Error while executing /faucetAccountHistory`, err.message);
