@@ -105,6 +105,7 @@ router.get('/faucetAccountAirdrops', async function (req, res, next) {
 router.get('/faucetAccountRewards', async function (req, res, next) {
   try {
     var address = req.query.address
+    const NOW = new Date().getTime() / 1000
 
     if(!address || address.trim().length == 0){
       return res.status(500).json({message: 'Must provide faucet account address'})
@@ -112,25 +113,22 @@ router.get('/faucetAccountRewards', async function (req, res, next) {
 
     var perPage = parseInt(req.query.perPage) || 10
     var page = parseInt(req.query.page) || 1
-    var sortBy = req.query.sortBy || "blockTimestamp"
-    var sortByDesc = req.query.sortByDesc || "1"
-    var timestamp = req.query.timestamp
-
-    if(!timestamp || timestamp.trim().length == 0){
-      try{  
-        timestamp = (Date.now() / 1000)
-      }catch(e){}
-    }
+  
+    var fromTimestamp = !isNaN(req.query.fromTimestamp) ? parseFloat(req.query.fromTimestamp) : NOW - (7 * DAY)
+    var toTimestamp = !isNaN(req.query.toTimestamp) ? parseFloat(req.query.toTimestamp) : NOW + 10000
 
     perPage = Math.min(perPage, 20)
 
     var query = {
       addr: address.toLowerCase(), 
       "$or" : [ { "event" : 'DirectPayout' }, { "event" : 'MatchPayout' } ],
-      blockTimestamp : { $lte : parseFloat(timestamp)},  
+      blockTimestamp: {
+        "$gte": fromTimestamp,
+        "$lte": toTimestamp
+    }  
     }
 
-    const response = await dripService.getDripFaucetEvents(address.toLowerCase(), timestamp, query, perPage, (page - 1) * perPage, sortBy, sortByDesc, 1000, true)
+    const response = await dripService.getDripFaucetEvents(address.toLowerCase(), query, perPage, (page - 1) * perPage, true)
     res.json({...response, page, perPage});
   } catch (err) {
     console.error(`Error while executing /faucetAccountRewards`, err.message);

@@ -317,7 +317,7 @@ export async function getDripAccountAirdrops(query, limit, skip, sortBy, sortByD
     pipeline.push({ $skip: skip })
     pipeline.push({ $limit: limit })
 
-    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+    const results = await collection.aggregate(pipeline,
     {
       "allowDiskUse": true
     }).toArray()
@@ -331,93 +331,34 @@ export async function getDripAccountAirdrops(query, limit, skip, sortBy, sortByD
   } 
 }
 
-
-const countDocuments = async function(addr, timestamp, collection){
-
-  var pipeline = [
-      {
-        "$match": {
-          "addr": addr,
-          "$or": [
-              {
-                  "event": "MatchPayout"
-              },
-              {
-                  "event": "DirectPayout"
-              }
-          ],
-          "blockTimestamp": {
-              "$lt": timestamp
-          }
-      }
-      }, 
-      {
-          "$group": {
-              "_id": {},
-              "COUNT(addr)": {
-                  "$sum": 1
-              }
-          }
-      }, 
-      {
-          "$project": {
-              "count": "$COUNT(addr)",
-              "_id": 0
-          }
-      }
-  ];
-
-  const results = await collection.aggregate(pipeline,
-    {
-      "allowDiskUse": true
-    }).toArray()
-  
-  return results[0].count
-}
-
-const count_cache = new Map()
-export async function getDripFaucetEvents(key, timestamp, query, limit, skip, sortBy, sortByDesc, maxResults, checkDonator) {
+export async function getDripFaucetEvents(address, query, limit, skip, checkDonator) {
   try {
     const dbo = await dbService.getConnectionPool()
-
     const isAddressDonator = !checkDonator || await isDonator(query.addr, dbo);
-
+    
     let hasMore = false
     let results = []
-    const isMainDevWallet = key.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     if(isAddressDonator && !isMainDevWallet){
-
-      
       const collection = dbo.collection(dbService.DRIP_FAUCET_EVENTS)
+      var count = await collection.countDocuments(query)
+      var sort = {blockTimestamp: -1}
       
-      var start = new Date().getTime()
-
       var pipeline = []
-      
-      if(!isAddressDonator){
-        delete query.blockTimestamp
-      }
-
-      var sort = {}
-      sort[sortBy] = parseInt(sortByDesc) * -1
-      
       pipeline.push({ $match: query })
       pipeline.push({ $sort: sort })
-
-      pipeline.push({ $limit: 1001 })
+      pipeline.push({ $skip: skip })
+      pipeline.push({ $limit: limit })
       
-      start = new Date().getTime()
-      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS).aggregate(pipeline,
+      results = await collection.aggregate(pipeline,
       {
         "allowDiskUse": true
       }).toArray()
-      
-      hasMore = results.length > 1000
     }
 
-    return { total: hasMore? 1000: results.length, results: isAddressDonator?results.slice(skip, skip + limit): results, hasMore, isDonator:isAddressDonator}
+    return { total: count, results, hasMore, isDonator:isAddressDonator}
   } catch (e) {
-    console.error('getDripAccountHistory error: ' + e.message)
+    console.error('getDripFaucetEvents error: ' + e.message)
     throw e
   } 
 }
