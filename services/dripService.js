@@ -266,6 +266,11 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
       }
     }
 
+    if(!isAddressDonator){
+      delete query.blockTimestamp
+      delete query.method
+    }
+
     var count = await collection.countDocuments(query)
 
     var pipeline = []

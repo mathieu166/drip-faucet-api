@@ -58,7 +58,8 @@ router.get('/faucetPlayerClaimByRange', async function (req, res, next) {
 router.get('/faucetAccountHistory', async function (req, res, next) {
   try {
     var address = req.query.address
-
+    const NOW = new Date().getTime() / 1000
+    
     if(!address || address.trim().length == 0){
       return res.status(500).json({message: 'Must provide faucet account address'})
     }
@@ -67,10 +68,25 @@ router.get('/faucetAccountHistory', async function (req, res, next) {
     var page = parseInt(req.query.page) || 1
     var sortBy = req.query.sortBy || "block"
     var sortByDesc = req.query.sortByDesc || "1"
+    var method = ['claim', 'roll', 'airdrop', 'deposit'].find(p=>p ===req.query.method)
+
+    var fromTimestamp = !isNaN(req.query.fromTimestamp) ? parseFloat(req.query.fromTimestamp) : undefined
+    var toTimestamp = !isNaN(req.query.toTimestamp) ? parseFloat(req.query.toTimestamp) : NOW + 10000
 
     var query = { addr: address.toLowerCase() }
 
-    const response = await dripService.getDripAccountHistory2(query, perPage, (page - 1) * perPage, sortBy, sortByDesc)
+    if(method){
+      query.method = method
+    }
+
+    if(fromTimestamp){
+      query.blockTimestamp =  {
+        "$gte": fromTimestamp,
+        "$lte": toTimestamp
+      }  
+    }
+
+    const response = await dripService.getDripAccountHistory2(query, perPage, (page - 1) * perPage, sortBy, sortByDesc, false)
     res.json({...response, page, perPage});
   } catch (err) {
     console.error(`Error while executing /faucetAccountHistory`, err.message);
@@ -125,7 +141,7 @@ router.get('/faucetAccountRewards', async function (req, res, next) {
       blockTimestamp: {
         "$gte": fromTimestamp,
         "$lte": toTimestamp
-    }  
+      }  
     }
 
     const response = await dripService.getDripFaucetEvents(address.toLowerCase(), query, perPage, (page - 1) * perPage, true)
