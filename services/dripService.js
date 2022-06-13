@@ -3,6 +3,7 @@ import RewardsPerDownlineLevel from '../queries/RewardsPerDownlineLevel.js';
 import NewPlayersPerDownlineLevel from '../queries/NewPlayersPerDownlineLevel.js';
 import DownlineBehavior from '../queries/DownlineBehavior.js';
 import DownlineActions from '../queries/DownlineActions.js';
+import GetIndividualPlayerStats from '../queries/GetIndividualPlayerStats.js';
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
@@ -510,6 +511,23 @@ export async function getDownlineBehavior(from, to, upline, directOnly) {
     return {results, isDonator: isTrial, contribution: {isTrial, level, effectiveLevel}}
   } catch (e) {
     console.error('getDownlineDetailActions error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getFaucetPlayerIndividualStats(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+    const pipeline = GetIndividualPlayerStats(address)
+
+    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+      {
+        "allowDiskUse": true
+      }).toArray()
+      
+    return {results}
+  } catch (e) {
+    console.error('getFaucetPlayerIndividualStats error: ' + e.message)
     throw e
   } 
 }
