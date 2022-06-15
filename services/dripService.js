@@ -525,7 +525,7 @@ export async function getFaucetPlayerIndividualStats(address) {
         "allowDiskUse": true
       }).toArray()
       
-    return {results}
+    return results.length === 0? {}: results[0]
   } catch (e) {
     console.error('getFaucetPlayerIndividualStats error: ' + e.message)
     throw e
