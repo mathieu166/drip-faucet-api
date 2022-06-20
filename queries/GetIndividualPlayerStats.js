@@ -25,6 +25,15 @@ export default (address) => {
                         }
                     }
                 ], 
+                "firstDepositDate": [
+                    {"$match": {"method": "deposit"}},
+                    {
+                       "$group": {
+                            _id: "$addr",
+                            "value": {"$first":"$blockTimestamp"}
+                       }
+                    }
+               ],
                 "actualClaim" : [
                     { 
                         "$match" : { 
