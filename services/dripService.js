@@ -292,11 +292,15 @@ export async function getDripAccountHistory2(query, limit, skip, sortBy, sortByD
       pipeline.push({ $limit: TRIAL_LIMIT })
     }
 
-    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
-    {
-      "allowDiskUse": true
-    }).toArray()
-
+    let results = []
+    
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+    if(effectiveLevel > 0 && !isMainDevWallet){
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+      {
+        "allowDiskUse": true
+      }).toArray()
+    }
     // console.log(results)
 
     return { total: count, results, isDonator: isTrial, contribution: {isTrial, level, effectiveLevel}}
