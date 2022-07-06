@@ -4,6 +4,7 @@ import NewPlayersPerDownlineLevel from '../queries/NewPlayersPerDownlineLevel.js
 import DownlineBehavior from '../queries/DownlineBehavior.js';
 import DownlineActions from '../queries/DownlineActions.js';
 import GetIndividualPlayerStats from '../queries/GetIndividualPlayerStats.js';
+import GetIndividualAdditionalPlayerStats from '../queries/GetIndividualAdditionalPlayerStats.js';
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
@@ -522,8 +523,38 @@ export async function getDownlineBehavior(from, to, upline, directOnly) {
 
 export async function getFaucetPlayerIndividualStats(address) {
   try {
+
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+
+    if(isMainDevWallet){
+      return {}
+    }
+
     const dbo = await dbService.getConnectionPool()
-    const pipeline = GetIndividualPlayerStats(address)
+    const pipeline = GetIndividualPlayerStats(address, new Date().getTime() / 1000)
+
+    const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
+      {
+        "allowDiskUse": true
+      }).toArray()
+      
+    return results.length === 0? {}: results[0]
+  } catch (e) {
+    console.error('getFaucetPlayerIndividualStats error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getFaucetPlayerAdditionalIndividualStats(address) {
+  try {
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+
+    if(isMainDevWallet){
+      return {}
+    }
+
+    const dbo = await dbService.getConnectionPool()
+    const pipeline = GetIndividualAdditionalPlayerStats(address, new Date().getTime() / 1000)
 
     const results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(pipeline,
       {

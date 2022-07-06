@@ -240,8 +240,6 @@ router.get('/getFaucetPlayerDownlineBehavior', async function (req, res, next) {
 
 router.get('/getFaucetPlayerIndividualStats', async function (req, res, next) {
   try {
-    const NOW = new Date().getTime() / 1000
-
     var address = req.query.address
     
     if(!address || address.trim().length == 0){
@@ -249,6 +247,22 @@ router.get('/getFaucetPlayerIndividualStats', async function (req, res, next) {
     }
 
     const response = await dripService.getFaucetPlayerIndividualStats(address)
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getFaucetPlayerIndividualStats`, err.message);
+    next(err);
+  }
+});
+
+router.get('/getFaucetPlayerAdditionalIndividualStats', async function (req, res, next) {
+  try {
+    var address = req.query.address
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getFaucetPlayerAdditionalIndividualStats(address)
     res.json(response);
   } catch (err) {
     console.error(`Error while executing /getFaucetPlayerIndividualStats`, err.message);
