@@ -10,19 +10,20 @@ const DAY = (60 * 60 * 24)
 
 const isDonator = async (address, dbo) => {
   //return {isTrial: true, level: 0, effectiveLevel: 3}
+  const isSunday = new Date().toUTCString().startsWith('Sun')
 
   const website = await dbo.collection(dbService.DRIP_FAUCET_WEBSITE).findOne({_id: 'prod'})
 
   const donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
   
   if(!donator){
-    if(!website.donationRequired){
+    if(!website.donationRequired || isSunday){
       return {isTrial: true, level: 0, effectiveLevel: 3};
     }
     return {isTrial: false, level: 0, effectiveLevel: 0};
   }
   const level = donator.level || 0
-  const isTrial = !website.donationRequired
+  const isTrial = !website.donationRequired || isSunday
   const effectiveLevel = isTrial? 3: level
   
   // console.log({isTrial, level, effectiveLevel})
