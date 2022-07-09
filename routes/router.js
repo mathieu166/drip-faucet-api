@@ -1,3 +1,4 @@
+import {Parser} from 'json2csv'
 import * as dripService from '../services/dripService.js'
 import * as statsService from '../services/statsService.js'
 import express from 'express'
@@ -266,6 +267,24 @@ router.get('/getFaucetPlayerAdditionalIndividualStats', async function (req, res
     res.json(response);
   } catch (err) {
     console.error(`Error while executing /getFaucetPlayerIndividualStats`, err.message);
+    next(err);
+  }
+});
+
+router.get('/getFaucetPlayerTax', async function (req, res, next) {
+  try {
+    var address = req.query.address
+    const parser = new Parser()
+    
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getFaucetPlayerTax(address)
+    res.type('text/csv')
+    res.send(parser.parse(response))
+  } catch (err) {
+    console.error(`Error while executing /getFaucetPlayerTax`, err.message);
     next(err);
   }
 });

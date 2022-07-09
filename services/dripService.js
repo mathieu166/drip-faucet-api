@@ -5,6 +5,7 @@ import DownlineBehavior from '../queries/DownlineBehavior.js';
 import DownlineActions from '../queries/DownlineActions.js';
 import GetIndividualPlayerStats from '../queries/GetIndividualPlayerStats.js';
 import GetIndividualAdditionalPlayerStats from '../queries/GetIndividualAdditionalPlayerStats.js';
+import GetPlayerTaxTransactions from '../queries/GetPlayerTaxTransactions.js'
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
@@ -564,6 +565,29 @@ export async function getFaucetPlayerAdditionalIndividualStats(address) {
     return results.length === 0? {}: results[0]
   } catch (e) {
     console.error('getFaucetPlayerIndividualStats error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getFaucetPlayerTax(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
+
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+    
+    var results = [{message: "Level 1 contribution required"}]
+    if(level > 0 && !isMainDevWallet){
+      results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(GetPlayerTaxTransactions(address),
+      {
+        "allowDiskUse": true
+      }).toArray()
+    }
+    // return {results, contribution: {isTrial, level, effectiveLevel}}
+    return results
+  } catch (e) {
+    console.error('getDownlineDetailActions error: ' + e.message)
     throw e
   } 
 }
