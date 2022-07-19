@@ -271,10 +271,33 @@ router.get('/getFaucetPlayerAdditionalIndividualStats', async function (req, res
   }
 });
 
+const fields = [
+  '_id',
+  'timestamp',	
+  'date',	
+  'addr',	
+  'addrTo',	
+  'block',	
+  'action',	
+  'bnbFiatValue',	
+  'dripFiatValue',
+  'dripbnbRatio',	
+  'transactionFeeBnb',	
+  'transactionFeeFiat',
+  'debit_available',	
+  'debit_wallet',	
+  'credit_wallet',	
+  'credit_deposit',	
+  'debit_available_fiat',	
+  'debit_wallet_fiat',	
+  'credit_wallet_fiat',	
+  'credit_deposit_fiat',	
+];
+
+const parser = new Parser({fields})
 router.get('/getFaucetPlayerTax', async function (req, res, next) {
   try {
     var address = req.query.address
-    const parser = new Parser()
     
     if(!address || address.trim().length == 0){
       return res.status(500).json({message: 'Must provide faucet account address'})
