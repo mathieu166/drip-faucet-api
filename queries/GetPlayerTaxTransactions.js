@@ -84,7 +84,7 @@ export default (address) =>{
         }, 
         {
             "$addFields" : {
-                "debit_available" : {
+                "debit_available_drip" : {
                     "$switch" : {
                         "branches" : [
                             {
@@ -109,7 +109,7 @@ export default (address) =>{
                         "default" : 0.0
                     }
                 },
-                "debit_wallet" : {
+                "debit_wallet_drip" : {
                     "$switch" : {
                         "branches" : [
                             {
@@ -151,7 +151,7 @@ export default (address) =>{
                         "default" : 0.0
                     }
                 },
-                "credit_wallet" : {
+                "credit_wallet_drip" : {
                     "$switch" : {
                         "branches" : [
                             {
@@ -172,7 +172,7 @@ export default (address) =>{
                         "default" : 0.0
                     }
                 },
-                "credit_deposit" : {
+                "credit_deposit_drip" : {
                     "$switch" : {
                         "branches" : [
                             {
@@ -271,25 +271,25 @@ export default (address) =>{
             "$addFields" : {
                 "debit_available_fiat" : {
                     "$multiply" : [
-                        "$debit_available",
+                        "$debit_available_drip",
                         "$dripFiatValue"
                     ]
                 },
                 "debit_wallet_fiat" : {
                     "$multiply" : [
-                        "$debit_wallet",
+                        "$debit_wallet_drip",
                         "$dripFiatValue"
                     ]
                 },
                 "credit_wallet_fiat" : {
                     "$multiply" : [
-                        "$credit_wallet",
+                        "$credit_wallet_drip",
                         "$dripFiatValue"
                     ]
                 },
                 "credit_deposit_fiat" : {
                     "$multiply" : [
-                        "$credit_deposit",
+                        "$credit_deposit_drip",
                         "$dripFiatValue"
                     ]
                 }
@@ -355,10 +355,10 @@ export default (address) =>{
                         "$bnbFiatValue"
                     ]
                 },
-                "debit_available" : 1.0,
-                "debit_wallet" : 1.0,
-                "credit_wallet" : 1.0,
-                "credit_deposit" : 1.0,
+                "debit_available_drip" : 1.0,
+                "debit_wallet_drip" : 1.0,
+                "credit_wallet_drip" : 1.0,
+                "credit_deposit_drip" : 1.0,
                 "dripbnbRatio" : 1.0,
                 "dripFiat" : 1.0,
                 "dripFiatValue" : 1.0,
