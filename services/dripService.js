@@ -13,10 +13,19 @@ const DAY = (60 * 60 * 24)
 const isDonator = async (address, dbo) => {
   //return {isTrial: true, level: 0, effectiveLevel: 3}
   const isSunday = new Date().toUTCString().startsWith('Sun')
+  const year = new Date().getFullYear();
 
   const website = await dbo.collection(dbService.DRIP_FAUCET_WEBSITE).findOne({_id: 'prod'})
 
-  const donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
+  var donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
+  const whitelist = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_WHITELIST).findOne({_id: address.toLowerCase()})
+  
+  if(!donator && whitelist){
+    const valid =  whitelist.years.find(p=>p === year);
+    if(valid){
+      donator = {level: whitelist.level}
+    }
+  }
   
   if(!donator){
     if(!website.donationRequired || isSunday){
