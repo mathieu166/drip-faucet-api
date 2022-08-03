@@ -328,4 +328,26 @@ router.post('/postAddAddress', async function (req, res, next) {
   }
 });
 
+router.get('/getDownlines', async function (req, res, next) {
+  try {
+    var address = req.query.address
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    var perPage = parseInt(req.query.perPage) || 10
+    var page = parseInt(req.query.page) || 1
+
+    var downlineLevel = parseInt(req.query.level)
+    var showOnlyNextRewarded = req.query.showOnlyNextRewarded == 'true'
+
+    const response = await dripService.getDownlines(address, downlineLevel, showOnlyNextRewarded, perPage, (page - 1) * perPage)
+    res.json({...response, page, perPage});
+  } catch (err) {
+    console.error(`Error while executing /getDownlines`, err.message);
+    next(err);
+  }
+});
+
 export default router

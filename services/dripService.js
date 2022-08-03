@@ -6,6 +6,7 @@ import DownlineActions from '../queries/DownlineActions.js';
 import GetIndividualPlayerStats from '../queries/GetIndividualPlayerStats.js';
 import GetIndividualAdditionalPlayerStats from '../queries/GetIndividualAdditionalPlayerStats.js';
 import GetPlayerTaxTransactions from '../queries/GetPlayerTaxTransactions.js'
+import GetDownlines from '../queries/GetDownlines.js';
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
@@ -597,6 +598,41 @@ export async function getFaucetPlayerTax(address) {
     return results
   } catch (e) {
     console.error('getDownlineDetailActions error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getDownlines(address, downlineLevel, showOnlyNextRewarded, limit, skip) {
+  try {
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+
+    if(isMainDevWallet){
+      return {}
+    }
+    var results = []
+    let total = 0
+
+    const dbo = await dbService.getConnectionPool()
+    const collection = dbo.collection(dbService.DRIP_FAUCET_PLAYERS)
+
+    const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
+    const pipeline = GetDownlines(address, downlineLevel, undefined, undefined, showOnlyNextRewarded)
+
+    if(effectiveLevel >= 2){
+      total = await collection.count(pipeline[0]["$match"])
+
+
+      pipeline.push({ $skip: skip })
+      pipeline.push({ $limit: limit })
+
+      results = await collection.aggregate(pipeline,
+        {
+          "allowDiskUse": true
+        }).toArray()
+    }
+    return {total, results, contribution: {isTrial, level, effectiveLevel}}
+  } catch (e) {
+    console.error('getDownlines error: ' + e.message)
     throw e
   } 
 }
