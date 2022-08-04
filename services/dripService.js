@@ -602,7 +602,7 @@ export async function getFaucetPlayerTax(address) {
   } 
 }
 
-export async function getDownlines(address, downlineLevel, showOnlyNextRewarded, limit, skip) {
+export async function getDownlines(address, downlineLevel, showOnlyNextRewarded,  sortBy, sortDesc,limit, skip) {
   try {
     const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
 
@@ -615,8 +615,13 @@ export async function getDownlines(address, downlineLevel, showOnlyNextRewarded,
     const dbo = await dbService.getConnectionPool()
     const collection = dbo.collection(dbService.DRIP_FAUCET_PLAYERS)
 
+    var sorts = undefined
+    if(sortBy){
+      sorts = [{key: sortBy, value: sortDesc?-1:1}]
+    }
+
     const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
-    const pipeline = GetDownlines(address, downlineLevel, undefined, undefined, showOnlyNextRewarded)
+    const pipeline = GetDownlines(address, downlineLevel, undefined, sorts, showOnlyNextRewarded)
 
     if(effectiveLevel >= 2){
       total = await collection.count(pipeline[0]["$match"])

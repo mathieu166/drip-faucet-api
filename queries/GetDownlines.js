@@ -10,11 +10,6 @@ export default (upline, level, filters, sorts, showOnlyNextRewarded) => {
             }
         }, 
         {
-            "$sort" : {
-                "total_deposits" : -1.0
-            }
-        }, 
-        {
             "$project" : {
                 "direct_upline" : 1.0,
                 "last_airdrop" : 1.0,
@@ -61,7 +56,12 @@ export default (upline, level, filters, sorts, showOnlyNextRewarded) => {
                 },
                 "name" : 1.0
             }
-        }
+        },
+        {
+            "$sort" : {
+                "total_deposits" : -1.0
+            }
+        }, 
     ]
 
     if(filters){
@@ -73,13 +73,13 @@ export default (upline, level, filters, sorts, showOnlyNextRewarded) => {
     if(level){
         pipeline[0]["$match"]["uplines"]["$elemMatch"].level = level
     }
-
+    
     if(sorts){
         //Delete default sort
-        delete pipeline[1]["$sort"].total_deposits
+        delete pipeline[2]["$sort"].total_deposits
 
         for(let sort of sorts){
-            pipeline[1]["$sort"][sort.key] = sort.value 
+            pipeline[2]["$sort"][sort.key] = sort.value 
         }
     }
 
