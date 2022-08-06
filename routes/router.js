@@ -341,9 +341,15 @@ router.get('/getDownlines', async function (req, res, next) {
     var perPage = parseInt(req.query.perPage) || 10
     var page = parseInt(req.query.page) || 1
 
-    var downlineLevel = parseInt(req.query.level)
+    var minLevel = parseInt(req.query.minLevel)
+    var maxLevel = parseInt(req.query.maxLevel)
+    var isSingleDownlineLevel = req.query.isSingleDownlineLevel === 'true'
+
+    var criterias = {downline: {min: minLevel, max: maxLevel, isSingleDownlineLevel}}
+   
     var showOnlyNextRewarded = req.query.showOnlyNextRewarded == 'true'
-    const response = await dripService.getDownlines(address, downlineLevel, showOnlyNextRewarded, sortBy, sortDesc, perPage, (page - 1) * perPage)
+
+    const response = await dripService.getDownlines(address, criterias, sortBy, sortDesc, perPage, (page - 1) * perPage)
     res.json({...response, page, perPage});
   } catch (err) {
     console.error(`Error while executing /getDownlines`, err.message);

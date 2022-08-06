@@ -1,4 +1,4 @@
-export default (upline, level, filters, sorts, showOnlyNextRewarded) => {
+export default (upline, filters, sorts) => {
     var pipeline = [
         {
             "$match" : {
@@ -58,6 +58,9 @@ export default (upline, level, filters, sorts, showOnlyNextRewarded) => {
             }
         },
         {
+            "$match" : {}
+        }, 
+        {
             "$sort" : {
                 "total_deposits" : -1.0
             }
@@ -66,26 +69,33 @@ export default (upline, level, filters, sorts, showOnlyNextRewarded) => {
 
     if(filters){
         for(let filter of filters){
-            pipeline[0]["$match"][filter.key] = filter.value
+            if(!filter.type || filter.type === 'eq'){
+                pipeline[2]["$match"][filter.key] = {$eq: filter.value}
+            }else if(filter.type === 'range'){
+                pipeline[2]["$match"][filter.key] = {$gte: filter.min, $lte: filter.max}
+            }else if(filter.type === 'gte'){
+                pipeline[2]["$match"][filter.key] = {$gte: filter.value}
+            }else if(filter.type === 'lte'){
+                pipeline[2]["$match"][filter.key] = {$lte: filter.value}
+            }
         }
     }
-
-    if(level){
-        pipeline[0]["$match"]["uplines"]["$elemMatch"].level = level
-    }
+    // if(level){
+    //     pipeline[0]["$match"]["uplines"]["$elemMatch"].level = level
+    // }
     
     if(sorts){
         //Delete default sort
-        delete pipeline[2]["$sort"].total_deposits
+        delete pipeline[3]["$sort"].total_deposits
 
         for(let sort of sorts){
-            pipeline[2]["$sort"][sort.key] = sort.value 
+            pipeline[3]["$sort"][sort.key] = sort.value 
         }
     }
 
-    if(showOnlyNextRewarded){
-        pipeline[0]["$match"].nextUplineRewarded = upline.toLowerCase()
-    }
+    // if(showOnlyNextRewarded){
+    //     pipeline[0]["$match"].nextUplineRewarded = upline.toLowerCase()
+    // }
     
     return pipeline
 }

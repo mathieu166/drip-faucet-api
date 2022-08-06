@@ -602,7 +602,7 @@ export async function getFaucetPlayerTax(address) {
   } 
 }
 
-export async function getDownlines(address, downlineLevel, showOnlyNextRewarded,  sortBy, sortDesc,limit, skip) {
+export async function getDownlines(address, criterias, sortBy, sortDesc,limit, skip) {
   try {
     const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
 
@@ -610,7 +610,6 @@ export async function getDownlines(address, downlineLevel, showOnlyNextRewarded,
       return {}
     }
     var results = []
-    let total = 0
 
     const dbo = await dbService.getConnectionPool()
     const collection = dbo.collection(dbService.DRIP_FAUCET_PLAYERS)
@@ -619,23 +618,34 @@ export async function getDownlines(address, downlineLevel, showOnlyNextRewarded,
     if(sortBy){
       sorts = [{key: sortBy, value: sortDesc?-1:1}]
     }
-
+    
+    var filters = []
+    if(criterias.downline.min && criterias.downline.max){
+      filters.push({key: 'downlineLevel', type: 'range', min: criterias.downline.min, max: criterias.downline.max})
+    }else if(criterias.downline.min && criterias.downline.isSingleDownlineLevel){
+      filters.push({key: 'downlineLevel', type: 'eq', value: criterias.downline.min})
+    }else if(criterias.downline.min && !criterias.downline.isSingleDownlineLevel){
+      filters.push({key: 'downlineLevel', type: 'gte', value: criterias.downline.min})
+    }else if(criterias.downline.max){
+      filters.push({key: 'downlineLevel', type: 'lte', value: criterias.downline.max})
+    }
+    
     const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
-    const pipeline = GetDownlines(address, downlineLevel, undefined, sorts, showOnlyNextRewarded)
+    const pipeline = GetDownlines(address, filters, sorts)
 
     if(effectiveLevel >= 2){
-      total = await collection.count(pipeline[0]["$match"])
-
-
-      pipeline.push({ $skip: skip })
-      pipeline.push({ $limit: limit })
+      const facet = { "$facet": { metadata: [ { $count: "total" }],
+                        data: [ { $skip: skip }, { $limit: limit } ]
+                    } }
+      pipeline.push(facet)
 
       results = await collection.aggregate(pipeline,
         {
           "allowDiskUse": true
         }).toArray()
+        return {total:results[0].metadata[0].total, results: results[0].data, contribution: {isTrial, level, effectiveLevel}}
     }
-    return {total, results, contribution: {isTrial, level, effectiveLevel}}
+    return {total:0, results: [], contribution: {isTrial, level, effectiveLevel}}
   } catch (e) {
     console.error('getDownlines error: ' + e.message)
     throw e
