@@ -646,7 +646,10 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
       filters.push({key: 'referrals', type: 'gte', value: 5})
     }
 
-    
+    if(criterias.rewardsNext){
+      filters.push({key: 'isNextRewarded', type: 'eq', value: true})
+    }
+
     const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
     const pipeline = GetDownlines(address, filters, sorts)
     if(effectiveLevel >= 2){

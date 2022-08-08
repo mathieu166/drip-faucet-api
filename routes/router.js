@@ -347,6 +347,7 @@ router.get('/getDownlines', async function (req, res, next) {
     var isSingleDownlineLevel = req.query.isSingleDownlineLevel === 'true'
     
     var teamOnly = req.query.teamOnly == 'true'
+    var rewardsNext = req.query.rewardsNext == 'true'
 
     var intervals
 
@@ -372,6 +373,7 @@ router.get('/getDownlines', async function (req, res, next) {
 
     var criterias = {downline: {min: minLevel, max: maxLevel, isSingleDownlineLevel}, 
                       teamOnly,
+                      rewardsNext,
                       intervals
                     }
    
