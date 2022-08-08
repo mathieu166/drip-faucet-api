@@ -629,10 +629,26 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
     }else if(criterias.downline.max){
       filters.push({key: 'downlineLevel', type: 'lte', value: criterias.downline.max})
     }
+
+    if(criterias.intervals){
+      for(let interval of criterias.intervals){
+        if(interval.min && interval.max){
+          filters.push({key: interval.key, type: 'range', min: interval.min, max: interval.max})
+        }else if(interval.min){
+          filters.push({key: interval.key, type: 'gte', value: interval.min})
+        }else if(interval.max){
+          filters.push({key: interval.key, type: 'lte', value: interval.max})
+        }
+      }
+    }
+
+    if(criterias.teamOnly){
+      filters.push({key: 'referrals', type: 'gte', value: 5})
+    }
+
     
     const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
     const pipeline = GetDownlines(address, filters, sorts)
-
     if(effectiveLevel >= 2){
       const facet = { "$facet": { metadata: [ { $count: "total" }],
                         data: [ { $skip: skip }, { $limit: limit } ]
@@ -643,7 +659,8 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
         {
           "allowDiskUse": true
         }).toArray()
-        return {total:results[0].metadata[0].total, results: results[0].data, contribution: {isTrial, level, effectiveLevel}}
+
+      return {total:results[0].metadata[0]?results[0].metadata[0].total:0, results: results[0].data, contribution: {isTrial, level, effectiveLevel}}
     }
     return {total:0, results: [], contribution: {isTrial, level, effectiveLevel}}
   } catch (e) {

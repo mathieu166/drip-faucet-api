@@ -328,6 +328,7 @@ router.post('/postAddAddress', async function (req, res, next) {
   }
 });
 
+const allowedIntervals = ['total_deposits','net_deposits','total_claim', 'total_hydrate', 'max_payouts', 'total_rewards', 'referrals', 'total_structure']
 router.get('/getDownlines', async function (req, res, next) {
   try {
     var address = req.query.address
@@ -344,13 +345,39 @@ router.get('/getDownlines', async function (req, res, next) {
     var minLevel = parseInt(req.query.minLevel)
     var maxLevel = parseInt(req.query.maxLevel)
     var isSingleDownlineLevel = req.query.isSingleDownlineLevel === 'true'
+    
+    var teamOnly = req.query.teamOnly == 'true'
 
-    var criterias = {downline: {min: minLevel, max: maxLevel, isSingleDownlineLevel}}
+    var intervals
+
+    for(let int of allowedIntervals){
+      var found = false
+      var criteria = {key: int}
+      if(req.query[`${int}-min`]){
+        criteria.min = parseFloat(req.query[`${int}-min`])
+        found = true
+      }
+      if(req.query[`${int}-max`]){
+        criteria.max = parseFloat(req.query[`${int}-max`])
+        found = true
+      }
+
+      if(found){
+        if(!intervals){
+          intervals = []
+        }
+        intervals.push(criteria)
+      }
+    }
+
+    var criterias = {downline: {min: minLevel, max: maxLevel, isSingleDownlineLevel}, 
+                      teamOnly,
+                      intervals
+                    }
    
-    var showOnlyNextRewarded = req.query.showOnlyNextRewarded == 'true'
 
     const response = await dripService.getDownlines(address, criterias, sortBy, sortDesc, perPage, (page - 1) * perPage)
-    res.json({...response, page, perPage});
+    res.json({...response, page, perPage, sortBy, sortDesc});
   } catch (err) {
     console.error(`Error while executing /getDownlines`, err.message);
     next(err);
