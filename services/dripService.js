@@ -642,6 +642,14 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
       }
     }
 
+    if(criterias.joinedOnMin && criterias.joinedOnMax){
+      filters.push({key: 'join_timestamp', type: 'range', min: criterias.joinedOnMin, max: criterias.joinedOnMax})
+    }else if(criterias.joinedOnMin){
+      filters.push({key: 'join_timestamp', type: 'lt', value: criterias.joinedOnMin})
+    }else if(criterias.joinedOnMax){
+      filters.push({key: 'join_timestamp', type: 'gt', value: criterias.joinedOnMax})
+    }
+
     if(criterias.teamOnly){
       filters.push({key: 'referrals', type: 'gte', value: 5})
     }

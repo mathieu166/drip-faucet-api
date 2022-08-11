@@ -77,6 +77,10 @@ export default (upline, filters, sorts) => {
                 pipeline[2]["$match"][filter.key] = {$gte: filter.value}
             }else if(filter.type === 'lte'){
                 pipeline[2]["$match"][filter.key] = {$lte: filter.value}
+            }else if(filter.type === 'gt'){
+                pipeline[2]["$match"][filter.key] = {$gt: filter.value}
+            }else if(filter.type === 'lt'){
+                pipeline[2]["$match"][filter.key] = {$lt: filter.value}
             }
         }
     }

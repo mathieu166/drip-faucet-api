@@ -341,10 +341,12 @@ router.get('/getDownlines', async function (req, res, next) {
     var sortDesc = req.query.sortDesc && req.query.sortDesc == 'true' ? true: false
     var perPage = parseInt(req.query.perPage) || 10
     var page = parseInt(req.query.page) || 1
-
     var minLevel = parseInt(req.query.minLevel)
     var maxLevel = parseInt(req.query.maxLevel)
     var isSingleDownlineLevel = req.query.isSingleDownlineLevel === 'true'
+
+    var joinedOnMin = parseInt(req.query.joinedOnMin)
+    var joinedOnMax = parseInt(req.query.joinedOnMax)
     
     var teamOnly = req.query.teamOnly == 'true'
     var rewardsNext = req.query.rewardsNext == 'true'
@@ -374,7 +376,9 @@ router.get('/getDownlines', async function (req, res, next) {
     var criterias = {downline: {min: minLevel, max: maxLevel, isSingleDownlineLevel}, 
                       teamOnly,
                       rewardsNext,
-                      intervals
+                      intervals,
+                      joinedOnMin,
+                      joinedOnMax
                     }
    
 
