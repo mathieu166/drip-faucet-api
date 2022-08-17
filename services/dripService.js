@@ -632,16 +632,15 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
 
     if(criterias.intervals){
       for(let interval of criterias.intervals){
-        if(interval.min && interval.max){
+        if(interval.min != undefined && interval.max != undefined){
           filters.push({key: interval.key, type: 'range', min: interval.min, max: interval.max})
-        }else if(interval.min){
+        }else if(interval.min != undefined){
           filters.push({key: interval.key, type: 'gte', value: interval.min})
-        }else if(interval.max){
+        }else if(interval.max != undefined){
           filters.push({key: interval.key, type: 'lte', value: interval.max})
         }
       }
     }
-
     if(criterias.joinedOnMin && criterias.joinedOnMax){
       filters.push({key: 'join_timestamp', type: 'range', min: criterias.joinedOnMin, max: criterias.joinedOnMax})
     }else if(criterias.joinedOnMin){
