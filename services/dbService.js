@@ -11,7 +11,7 @@ export const DRIP_FAUCET_DONATORS_WHITELIST = 'DripFaucetDonatorsWhitelist'
 export const DRIP_PLAYER_CLAIM_BY_RANGE = 'DripPlayerClaimByRange'
 export const DRIP_FAUCET_WEBSITE = 'DripFaucetWebsite'
 export const DRIP_FAUCET_PLAYER_HIERARCHY = 'DripFaucetPlayerHierarchy'
-
+export const DRIP_USER_PROFILES = 'DripUserProfiles'
 export const DRIP_FAUCET_STATS_ADDRESSES = 'DripFaucetStatsAddresses'
 
 var connectionPool;

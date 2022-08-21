@@ -661,20 +661,111 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
     const pipeline = GetDownlines(address, filters, sorts)
     if(effectiveLevel >= 2){
       const facet = { "$facet": { metadata: [ { $count: "total" }],
-                        data: [ { $skip: skip }, { $limit: limit } ]
+                        data: [{ $skip: skip }, { $limit: limit }]
                     } }
+      
+      if(criterias.showAdditionalStats){
+        facet["$facet"].sum_total_deposits = [
+          { 
+              $group: { 
+                  _id: null, 
+                  sum_total_deposits: { $sum: "$total_deposits" },
+              }
+          }
+        ]
+        facet["$facet"].sum_maxed_wallet = [
+          {
+               $project: {
+                   max_payouts_capped: {  
+                       $cond: [ { $eq: [ "$max_payouts", 100000 ] }, 1, 0]
+                   },
+                   wallet_over: {  
+                       $cond: [ {$and: [{ $eq: [ "$max_payouts", 100000 ] }, {$eq: [ "$total_claim", 100000 ] }]}, 1, 0]
+                   },
+               }
+           },
+           {
+               $group: {
+                   _id: null,
+                   sum_max_payouts_capped: { $sum: "$max_payouts_capped" },
+                   sum_wallet_over: { $sum: "$wallet_over" },
+               }
+           }  
+        ]
+
+        facet["$facet"].sum_per_level = [
+          { 
+              $group: { 
+                  _id: "$downlineLevel", 
+                  sum_total_deposits: { $sum: "$total_deposits" },
+              },
+          },
+          {$sort: {"_id": 1 },}
+        ]
+      }                    
       pipeline.push(facet)
 
       results = await collection.aggregate(pipeline,
         {
           "allowDiskUse": true
         }).toArray()
+      
 
-      return {total:results[0].metadata[0]?results[0].metadata[0].total:0, results: results[0].data, contribution: {isTrial, level, effectiveLevel}}
+      var subResults = {}
+      if(criterias.showAdditionalStats){
+        subResults = {
+          additionalStats : [
+            {key: 'sum_total_deposits', type: 'decimal', value: results[0].sum_total_deposits[0]?results[0].sum_total_deposits[0].sum_total_deposits: 0},
+            {key: 'sum_max_payouts_capped', type: 'integer', value:results[0].sum_maxed_wallet[0]?results[0].sum_maxed_wallet[0].sum_max_payouts_capped:0},
+            {key: 'sum_wallet_over', type: 'integer', value:results[0].sum_maxed_wallet[0]?results[0].sum_maxed_wallet[0].sum_wallet_over:0},
+            {key: 'sum_per_level', type: 'list', value:results[0].sum_per_level?results[0].sum_per_level.map(p=> {return {level: p["_id"], sum_total_deposits: p.sum_total_deposits}}):[]},
+          ]
+        }
+      }
+
+      //console.log(JSON.stringify(pipeline))
+
+      return {...subResults, total:results[0].metadata[0]?results[0].metadata[0].total:0, results: results[0].data, contribution: {isTrial, level, effectiveLevel}}
     }
     return {total:0, results: [], contribution: {isTrial, level, effectiveLevel}}
   } catch (e) {
     console.error('getDownlines error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getProfile(email) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+    
+    const profile = await dbo.collection(dbService.DRIP_USER_PROFILES).findOne({_id: email})
+
+    return profile
+  } catch (e) {
+    console.error('getDripFaucetMonthlyNewAccounts error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function setProfile(email, profile) {
+  try {
+    if(!profile){
+      return
+    }
+
+    console.log(email)
+    const dbo = await dbService.getConnectionPool()
+    
+    const persistedProfile = await dbo.collection(dbService.DRIP_USER_PROFILES).findOne({_id: email})
+    const update = {...profile}
+    update['_id'] = email
+    update.email = email
+    
+    update.nonce = persistedProfile? persistedProfile.nonce+1:1
+
+    await dbo.collection(dbService.DRIP_USER_PROFILES).updateOne({_id: email}, {$set: update}, {upsert: true});
+  } catch (e) {
+    console.error('setProfile error: ' + e.message)
     throw e
   } 
 }

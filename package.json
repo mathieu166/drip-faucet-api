@@ -26,6 +26,7 @@
     "ethereum-input-data-decoder": "^0.3.5",
     "ethers": "^5.5.2",
     "express": "^4.17.1",
+    "express-oauth2-jwt-bearer": "^1.1.0",
     "express-rate-limit": "^5.5.1",
     "json2csv": "^5.0.7",
     "mongodb": "^4.5.0",

@@ -3,7 +3,6 @@ import rateLimit from 'express-rate-limit';
 import router from './routes/router.js';
 import cors from 'cors'
 
-const message = 'You signature is required to identify your registration plan.'
 const app = express();
 
 const limiter = rateLimit({

@@ -84,10 +84,7 @@ export default (upline, filters, sorts) => {
             }
         }
     }
-    // if(level){
-    //     pipeline[0]["$match"]["uplines"]["$elemMatch"].level = level
-    // }
-    
+  
     if(sorts){
         //Delete default sort
         delete pipeline[3]["$sort"].total_deposits
@@ -97,9 +94,5 @@ export default (upline, filters, sorts) => {
         }
     }
 
-    // if(showOnlyNextRewarded){
-    //     pipeline[0]["$match"].nextUplineRewarded = upline.toLowerCase()
-    // }
-    
     return pipeline
 }

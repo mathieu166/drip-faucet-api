@@ -4,6 +4,61 @@ import * as statsService from '../services/statsService.js'
 import express from 'express'
 const router = express.Router()
 
+import dotenv from 'dotenv'
+dotenv.config();
+
+import { auth, requiredScopes } from 'express-oauth2-jwt-bearer'
+
+// Authorization middleware. When used, the Access Token must
+// exist and be verified against the Auth0 JSON Web Key Set.
+const checkJwt = auth({
+  audience: process.env.AUTH_AUDIENCE,
+  issuerBaseURL: process.env.AUTH_BASE_URL,
+});
+
+router.get('/getProfile', checkJwt, async function(req, res) {
+  try {
+    const email = req.auth.payload.email
+    const response = await dripService.getProfile(email)
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getProfile`, err.message);
+    next(err);
+  }
+});
+
+router.get('/getProfileDetail', checkJwt, async function(req, res) {
+  try {
+    const email = req.auth.payload.email
+    const profile = await dripService.getProfile(email)
+
+    if(profile){
+      res.json({found: true, email: profile['_id'], nonce: profile.nonce})
+    }else{
+      res.json({found: false})
+    }
+
+  } catch (err) {
+    console.error(`Error while executing /getProfileDetail`, err.message);
+    next(err);
+  }
+});
+
+router.post('/updateProfile', checkJwt, async function(req, res) {
+  try {
+    const email = req.auth.payload.email
+    const profile = req.body.profile
+    if(!profile){
+      throw new Error('Profile required')
+    }
+
+    await dripService.setProfile(email, profile)
+    res.json({});
+  } catch (err) {
+    console.error(`Error while executing /updateProfile`, err.message);
+  }
+});
+
 const DAY = 60 * 60 * 24
 
 router.get('/faucetMonthlyNewAccounts', async function (req, res, next) {
@@ -344,6 +399,7 @@ router.get('/getDownlines', async function (req, res, next) {
     var minLevel = parseInt(req.query.minLevel)
     var maxLevel = parseInt(req.query.maxLevel)
     var isSingleDownlineLevel = req.query.isSingleDownlineLevel === 'true'
+    //var showAdditionalStats = req.query.showAdditionalStats === 'true'
 
     var joinedOnMin = parseInt(req.query.joinedOnMin)
     var joinedOnMax = parseInt(req.query.joinedOnMax)
@@ -378,7 +434,8 @@ router.get('/getDownlines', async function (req, res, next) {
                       rewardsNext,
                       intervals,
                       joinedOnMin,
-                      joinedOnMax
+                      joinedOnMax,
+//                      showAdditionalStats,
                     }
    
 
