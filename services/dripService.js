@@ -7,12 +7,13 @@ import GetIndividualPlayerStats from '../queries/GetIndividualPlayerStats.js';
 import GetIndividualAdditionalPlayerStats from '../queries/GetIndividualAdditionalPlayerStats.js';
 import GetPlayerTaxTransactions from '../queries/GetPlayerTaxTransactions.js'
 import GetDownlines from '../queries/GetDownlines.js';
+import GetEstimatedDownlineRewardsPerLevel from '../queries/GetEstimatedDownlineRewardsPerLevel.js';
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
 
 const isDonator = async (address, dbo) => {
-  //return {isTrial: true, level: 0, effectiveLevel: 3}
+  //return {isTrial: true, level: 2, effectiveLevel: 3}
   const isSunday = new Date().toUTCString().startsWith('Sun')
   const year = new Date().getFullYear();
 
@@ -598,6 +599,29 @@ export async function getFaucetPlayerTax(address) {
     return results
   } catch (e) {
     console.error('getDownlineDetailActions error: ' + e.message)
+    throw e
+  } 
+}
+
+
+export async function getEstimatedDownlineRewardsPerLevel(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+
+    const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
+
+    const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
+    
+    var results = []
+    if(level > 1 && !isMainDevWallet){
+      results = await dbo.collection(dbService.DRIP_FAUCET_PLAYERS).aggregate(GetEstimatedDownlineRewardsPerLevel(address),
+      {
+        "allowDiskUse": true
+      }).toArray()
+    }
+    return {results, contribution: {isTrial, level, effectiveLevel}}
+  } catch (e) {
+    console.error('getEstimatedDownlineRewardsPerLevel error: ' + e.message)
     throw e
   } 
 }

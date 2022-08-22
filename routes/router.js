@@ -390,4 +390,21 @@ router.get('/getDownlines', async function (req, res, next) {
   }
 });
 
+
+router.get('/getEstimatedDownlineRewardsPerLevel', async function (req, res, next) {
+  try {
+    var address = req.query.address
+
+    if(!address || address.trim().length == 0){
+      return res.status(500).json({message: 'Must provide faucet account address'})
+    }
+
+    const response = await dripService.getEstimatedDownlineRewardsPerLevel(address)
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getDownlines`, err.message);
+    next(err);
+  }
+});
+
 export default router
