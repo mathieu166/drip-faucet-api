@@ -328,6 +328,17 @@ router.post('/postAddAddress', async function (req, res, next) {
   }
 });
 
+router.get('/getContributionLevel', async function (req, res, next) {
+  try {
+    const address = req.query.address
+    const response = await dripService.getContributionLevel(address)
+    res.json(response);
+  } catch (err) {
+    console.error(`Error while executing /getContributionLevel`, err.message);
+    next(err);
+  }
+});
+
 const allowedIntervals = ['total_deposits','net_deposits','total_claim', 'total_hydrate', 'max_payouts', 'total_rewards', 'referrals', 'total_structure']
 router.get('/getDownlines', async function (req, res, next) {
   try {

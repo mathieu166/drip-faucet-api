@@ -49,10 +49,20 @@ const USER_BEHAVIOR = 3;
 const PLAYER_DEPOSITS = 4;
 const PLAYER_CLAIM_BY_RANGE = 5;
 
+export async function getContributionLevel(address){
+  try {
+    const dbo = await dbService.getConnectionPool()
+    
+    return isDonator(address, dbo)
+  } catch (e) {
+    console.error('getContributionLevel error: ' + e.message)
+    throw e
+  } 
+}
+
 const MINUTE = 60 * 1000
 const INTERVAL_BETWEEN_REFRESH = 30 * MINUTE
 var cache = new Map();
-
 export async function getDripFaucetMonthlyNewAccounts() {
   var NOW = new Date().getTime()
 
