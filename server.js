@@ -1,6 +1,7 @@
 import express, { json, urlencoded } from 'express';
 import rateLimit from 'express-rate-limit';
 import router from './routes/router.js';
+import refrouter from './routes/refrouter.js';
 import cors from 'cors'
 
 const message = 'You signature is required to identify your registration plan.'
@@ -8,15 +9,23 @@ const app = express();
 
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
-  max: 30 // limit each IP to 30 requests per windowMs
+  max: 60 // limit each IP to 30 requests per windowMs
 });
 
-app.use(limiter);
+const refLimiter = rateLimit({
+  windowMs: 60 * 1000 * 60, // 1 hours
+  max: 5 // limit each IP to 5 requests per windowMs
+});
+
+
 app.use(cors())
 app.use(json());
 app.use(urlencoded());
 app.options('*', cors())
 
+app.use('/ref', refrouter)
+
+app.use('/', limiter);
 app.use('/', router);
 
 /* Error handler middleware */

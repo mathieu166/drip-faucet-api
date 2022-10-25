@@ -7,10 +7,13 @@ export const DRIP_FAUCET_DAILY_METHOD = 'DripFaucetDailyMethod'
 export const DRIP_FAUCET_PLAYER_DEPOSIT = 'DripFaucetPlayerDeposit'
 export const DRIP_FAUCET_PLAYERS = 'DripFaucetPlayers'
 export const DRIP_FAUCET_DONATORS = 'DripFaucetDonators'
+export const DRIP_FAUCET_DONATORS_V2 = 'DripFaucetDonatorsV2'
 export const DRIP_FAUCET_DONATORS_WHITELIST = 'DripFaucetDonatorsWhitelist'
 export const DRIP_PLAYER_CLAIM_BY_RANGE = 'DripPlayerClaimByRange'
 export const DRIP_FAUCET_WEBSITE = 'DripFaucetWebsite'
 export const DRIP_FAUCET_PLAYER_HIERARCHY = 'DripFaucetPlayerHierarchy'
+export const DRIP_FAUCET_DONATORS_PRICE = 'DripFaucetDonatorsPrice'
+export const DRIP_FAUCET_REFERRERS = 'DripFaucetReferrers'
 
 export const DRIP_FAUCET_STATS_ADDRESSES = 'DripFaucetStatsAddresses'
 

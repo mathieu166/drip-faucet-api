@@ -14,33 +14,48 @@ const DAY = (60 * 60 * 24)
 
 const isDonator = async (address, dbo) => {
   //return {isTrial: true, level: 2, effectiveLevel: 3}
-  const isSunday = new Date().toUTCString().startsWith('Sun')
-  const year = new Date().getFullYear();
-
+  const now =  new Date();
+  const isSunday = now.toUTCString().startsWith('Sun')
+  const year = now.getFullYear();
   const website = await dbo.collection(dbService.DRIP_FAUCET_WEBSITE).findOne({_id: 'prod'})
+  const price = (await dbo.collection(dbService.DRIP_FAUCET_DONATORS_PRICE).find({_id: {$lte: now.getTime() / 1000}}).sort({_id: -1}).toArray())[0]
 
-  var donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
+  var donatorV1 = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
+  var donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_V2).findOne({_id: address.toLowerCase()})
   const whitelist = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_WHITELIST).findOne({_id: address.toLowerCase()})
   
   if(!donator && whitelist){
     const valid =  whitelist.years.find(p=>p === year);
     if(valid){
-      donator = {level: whitelist.level}
+      donator = {level: {}}
+      donator.level[year+''] = {value: whitelist.level}
     }
   }
   
   if(!donator){
-    if(!website.donationRequired || isSunday){
-      return {isTrial: true, level: 0, effectiveLevel: 3};
+    const isFree = !website.donationRequired || isSunday;
+
+    if(donatorV1 && year == 2023 && donator['2023']){
+      return {isTrial: false, level: donatorV1.level, effectiveLevel: isFree?3:donatorV1.level, price};
     }
-    return {isTrial: false, level: 0, effectiveLevel: 0};
+
+    if(isFree){
+      return {isTrial: true, level: 0, effectiveLevel: 3, price};
+    }
+    return {isTrial: false, level: 0, effectiveLevel: 0, price};
   }
-  const level = donator.level || 0
-  const isTrial = !website.donationRequired || isSunday
+
+  var isHalfPriceEligible = donator.level[(price.year - 1)+''] && donator.level[(price.year - 1)+''].value > 0
+  isHalfPriceEligible = isHalfPriceEligible?isHalfPriceEligible:false
+  const currentLevel = donator.level[year+''].value
+  const nextYearLevel = donator.level[(year+1)+'']?donator.level[(year+1)+''].value:0
+  
+  const level = Math.max(currentLevel, nextYearLevel)
+  const isTrial = level == 0 && (!website.donationRequired || isSunday)
   const effectiveLevel = isTrial? 3: level
   
-  // console.log({isTrial, level, effectiveLevel})
-  return {isTrial, level, effectiveLevel}
+  // console.log({isTrial, level, effectiveLevel, donatorLevels: donator.level, price, isHalfPriceEligible})
+  return {isTrial, level, effectiveLevel, donatorLevels: donator.level, price, isHalfPriceEligible}
 }
 
 const MONTHLY_NEW_ACCOUNTS = 1;
@@ -49,11 +64,18 @@ const USER_BEHAVIOR = 3;
 const PLAYER_DEPOSITS = 4;
 const PLAYER_CLAIM_BY_RANGE = 5;
 
-export async function getContributionLevel(address){
+export async function getContributionLevel(address, ref){
   try {
     const dbo = await dbService.getConnectionPool()
+    var referrer = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({_id: ref})
+
+    if(!referrer){
+      referrer = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({referrer_address: ''})
+    }
     
-    return isDonator(address, dbo)
+    const referral_address = referrer.referral_address
+    
+    return {...await isDonator(address, dbo), referral_address}
   } catch (e) {
     console.error('getContributionLevel error: ' + e.message)
     throw e
