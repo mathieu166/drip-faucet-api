@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import router from './routes/router.js';
 import refrouter from './routes/refrouter.js';
 import cors from 'cors'
+import { ethers } from 'ethers'
 
 const message = 'You signature is required to identify your registration plan.'
 const app = express();
@@ -22,6 +23,19 @@ app.use(cors())
 app.use(json());
 app.use(urlencoded());
 app.options('*', cors())
+
+app.use('/ref', (req, res, next) => {
+  const { s, address } = req.query
+  if(!s || !address){
+    return res.status(401).send('Unauthorized access.')
+  }
+
+  const verifiedAddress = ethers.utils.verifyMessage("www.dripnetwork.ca", s)
+  if (address.toLocaleLowerCase() !== verifiedAddress.toLocaleLowerCase()) {
+    return res.status(401).send('Unauthorized access.')
+  }
+  next();
+})
 
 app.use('/ref', refrouter)
 

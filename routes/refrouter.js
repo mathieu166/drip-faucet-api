@@ -15,4 +15,23 @@ router.post('/createReferral', async function (req, res, next) {
   }
 });
 
+router.get('/getReferrals', async function (req, res, next) {
+  try {
+    const { s, address } = req.query
+    const referrer = await dripService.getReferrer(address)
+    if(!referrer){
+      res.json({status: 0})
+      return;
+    }
+
+    const response = await dripService.getReferrals(referrer._id)
+    
+    res.json({status: 1, referrer, referrals: response});
+  } catch (err) {
+    console.error(`Error while executing /getReferrals`, err.message);
+    next(err);
+  }
+});
+
+
 export default router

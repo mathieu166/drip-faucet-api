@@ -70,7 +70,7 @@ export async function getContributionLevel(address, ref){
     var referrer = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({_id: ref})
 
     if(!referrer){
-      referrer = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({referrer_address: ''})
+      referrer = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({_id: '6352cd8b23e28057f096dabf'})
     }
     
     const referral_address = referrer.referral_address
@@ -731,6 +731,55 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
     return {total:0, results: [], contribution: {isTrial, level, effectiveLevel}}
   } catch (e) {
     console.error('getDownlines error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getReferrer(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+    
+    return await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({referrer_address: address})
+  } catch (e) {
+    console.error('getReferrer error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function getReferrals(refId) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+    return await dbo.collection(dbService.DRIP_FAUCET_DONATORS_V2).aggregate(
+      [
+          {
+              "$match" : {
+                  "referrer_id" : refId,
+                  _id: {$nin:[
+                    '0x1e4ec21e0643b689d252a1462c8f126156e62c21',
+                    '0x22e3353419084218963a47581a71d1824c5857d5'
+                  ]}
+              }
+          }, 
+          {
+              "$addFields" : {
+                  "created_on" : {
+                      "$first" : "$transactionHashes.timestamp"
+                  }
+              }
+          }, 
+          {
+              "$sort" : {
+                  "created_on" : -1.0
+              }
+          }
+      ], 
+      {
+          "allowDiskUse" : false
+      }
+  ).toArray();
+
+  } catch (e) {
+    console.error('getReferrals error: ' + e.message)
     throw e
   } 
 }
