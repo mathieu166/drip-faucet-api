@@ -19,7 +19,7 @@ const isDonator = async (address, dbo) => {
   const year = now.getFullYear();
   const website = await dbo.collection(dbService.DRIP_FAUCET_WEBSITE).findOne({_id: 'prod'})
   const price = (await dbo.collection(dbService.DRIP_FAUCET_DONATORS_PRICE).find({_id: {$lte: now.getTime() / 1000}}).sort({_id: -1}).toArray())[0]
-
+  return {isTrial: true, level: 2, effectiveLevel: 2, price};
   var donatorV1 = await dbo.collection(dbService.DRIP_FAUCET_DONATORS).findOne({_id: address.toLowerCase()})
   var donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_V2).findOne({_id: address.toLowerCase()})
   const whitelist = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_WHITELIST).findOne({_id: address.toLowerCase()})
