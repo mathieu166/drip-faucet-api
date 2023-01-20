@@ -616,12 +616,12 @@ export async function getFaucetPlayerTax(address) {
   try {
     const dbo = await dbService.getConnectionPool()
 
-    const {isTrial, level, effectiveLevel} = await isDonator(address, dbo);
+    const {isTrial, level, effectiveLevel, isHalfPriceEligible} = await isDonator(address, dbo);
 
     const isMainDevWallet = address.toLowerCase() === '0xe8e9720e39e13854657c165cf4eb10b2dfe33570'
     
     var results = [{message: "Level 1 contribution required"}]
-    if(level > 0 && !isMainDevWallet){
+    if(level > 0 && !isMainDevWallet || isHalfPriceEligible){
       results = await dbo.collection(dbService.DRIP_FAUCET_EVENTS_BY_TX).aggregate(GetPlayerTaxTransactions(address),
       {
         "allowDiskUse": true
