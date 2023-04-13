@@ -24,7 +24,7 @@ const isDonator = async (address, dbo) => {
   var donator = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_V2).findOne({_id: address.toLowerCase()})
   const whitelist = await dbo.collection(dbService.DRIP_FAUCET_DONATORS_WHITELIST).findOne({_id: address.toLowerCase()})
   
-  if(!donator && whitelist){
+  if(whitelist){
     const valid =  whitelist.years.find(p=>p === year);
     if(valid){
       donator = {level: {}}
