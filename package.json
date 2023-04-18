@@ -23,12 +23,14 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
+    "cryptr": "^6.0.3",
     "ethereum-input-data-decoder": "^0.3.5",
     "ethers": "^5.5.2",
     "express": "^4.17.1",
     "express-rate-limit": "^5.5.1",
     "json2csv": "^5.0.7",
     "mongodb": "^4.5.0",
+    "short-uuid": "^4.2.2",
     "web3": "^1.7.3"
   }
 }

@@ -5,7 +5,6 @@ import refrouter from './routes/refrouter.js';
 import cors from 'cors'
 import { ethers } from 'ethers'
 
-const message = 'You signature is required to identify your registration plan.'
 const app = express();
 
 const limiter = rateLimit({
@@ -25,7 +24,8 @@ app.use(urlencoded());
 app.options('*', cors())
 
 app.use('/ref', (req, res, next) => {
-  const { s, address } = req.query
+  const { s, address } = {...req.query, ...req.body}
+  
   if(!s || !address){
     return res.status(401).send('Unauthorized access.')
   }

@@ -14,6 +14,8 @@ export const DRIP_FAUCET_WEBSITE = 'DripFaucetWebsite'
 export const DRIP_FAUCET_PLAYER_HIERARCHY = 'DripFaucetPlayerHierarchy'
 export const DRIP_FAUCET_DONATORS_PRICE = 'DripFaucetDonatorsPrice'
 export const DRIP_FAUCET_REFERRERS = 'DripFaucetReferrers'
+export const DRIP_FAUCET_DONATORS_TRANSACTIONS = 'DripFaucetDonatorsTransactions'
+
 
 export const DRIP_FAUCET_STATS_ADDRESSES = 'DripFaucetStatsAddresses'
 

@@ -8,6 +8,16 @@ import GetIndividualAdditionalPlayerStats from '../queries/GetIndividualAddition
 import GetPlayerTaxTransactions from '../queries/GetPlayerTaxTransactions.js'
 import GetDownlines from '../queries/GetDownlines.js';
 import GetEstimatedDownlineRewardsPerLevel from '../queries/GetEstimatedDownlineRewardsPerLevel.js';
+import GetReferrerTransactionsStats from '../queries/GetReferrerTransactionsStats.js';
+
+import ethers from "ethers";
+
+import encrypt from './encrypt.js';
+import short from 'short-uuid';
+
+const translator = short(short.constants.flickrBase58, {
+  consistentLength: false,
+});
 
 const TRIAL_LIMIT = 5;
 const DAY = (60 * 60 * 24)
@@ -738,8 +748,16 @@ export async function getDownlines(address, criterias, sortBy, sortDesc,limit, s
 export async function getReferrer(address) {
   try {
     const dbo = await dbService.getConnectionPool()
+  
+    const referrer = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({referrer_address: address})
     
-    return await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).findOne({referrer_address: address})
+    if(referrer){
+      var referrers = referrers = await dbo.collection(dbService.DRIP_FAUCET_REFERRERS).find({upline_id: referrer._id}).toArray()
+      
+      return {...referrer, referrers: referrers.map(p=>{return {referrer_address: p.referrer_address, id: p._id, referral_address: p.referral_address, upline_id: p.upline_ido}})}
+    }
+
+    return null
   } catch (e) {
     console.error('getReferrer error: ' + e.message)
     throw e
@@ -764,12 +782,15 @@ export async function getReferrals(refId) {
               "$addFields" : {
                   "created_on" : {
                       "$first" : "$transactionHashes.timestamp"
+                  },
+                  "modified_on" : {
+                    "$last" : "$transactionHashes.timestamp"
                   }
               }
           }, 
           {
               "$sort" : {
-                  "created_on" : -1.0
+                  "modified_on" : -1.0
               }
           }
       ], 
@@ -783,3 +804,55 @@ export async function getReferrals(refId) {
     throw e
   } 
 }
+
+export async function getReferrerTransactionsStats(referrerId) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+    return await dbo.collection(dbService.DRIP_FAUCET_DONATORS_TRANSACTIONS).aggregate(
+      GetReferrerTransactionsStats(referrerId), 
+      {
+          "allowDiskUse" : false
+      }
+  ).toArray();
+
+  } catch (e) {
+    console.error('getReferrals error: ' + e.message)
+    throw e
+  } 
+}
+
+export async function createReferrerAccount(address) {
+  try {
+    const dbo = await dbService.getConnectionPool()
+    const referrersCollection = dbo.collection(dbService.DRIP_FAUCET_REFERRERS);
+    const contributorsCollection = dbo.collection(dbService.DRIP_FAUCET_DONATORS_V2);
+
+    const contributor = await contributorsCollection.findOne({_id: address.toLowerCase()});
+    
+    if(!contributor){
+      return {success: false, error_code: 'NOT_CONT', message: 'You must contribute to any available level first.'}
+    }
+
+    const wallet = ethers.Wallet.createRandom();
+    const referral_address = wallet.address;
+    const referral_address_pk = encrypt(wallet.privateKey);
+    const _id = translator.new();
+    
+    await referrersCollection.insertOne(
+      {
+        _id, 
+        referrer_address: address.toLowerCase(),
+        referral_address,
+        referral_address_pk,
+        active: true,
+        upline_id: contributor.referrer_id
+      })
+
+    return {success: true}
+   
+  } catch (e) {
+    console.error('createReferrerAccount error: ' + e.message)
+    throw e
+  } 
+}
+
